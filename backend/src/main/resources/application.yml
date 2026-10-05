@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: Gestao-Escolar
+  # Permite que o Flyway assuma o controle do banco já populado pelo init.sql
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
