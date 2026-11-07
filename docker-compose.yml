@@ -1,0 +1,118 @@
+# Uso:  cp .env.example .env  (edite os segredos)  &&  docker compose up -d --build
+# Com HTTPS (recomendado):  docker compose --profile https up -d --build   (ver README, seção "HTTPS na rede local")
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sige}
+      POSTGRES_USER: ${POSTGRES_USER:-sige}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      TZ: America/Recife
+    # Conservador para poucos recursos. NÃO desligue fsync nem coloque o WAL em tmpfs: uma queda de energia
+    # perderia dados ou impediria o banco de subir. Menos escrita = checkpoints mais espaçados + WAL comprimido.
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c effective_cache_size=192MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
+      -c max_connections=20
+      -c checkpoint_timeout=15min
+      -c max_wal_size=512MB
+      -c wal_compression=on
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+    networks:
+      sige:
+        aliases:
+          - db
+
+  api:
+    build: .
+    image: sige-api:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-sige}
+      DB_USER: ${POSTGRES_USER:-sige}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET (>= 32 caracteres) no .env}
+      JWT_EXPIRACAO: ${JWT_EXPIRACAO:-8h}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      ADMIN_NOME: ${ADMIN_NOME:-Administrador}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_SENHA: ${ADMIN_SENHA:-}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
+      # Só preencha atrás do Caddy (perfil https): a API passa a confiar no X-Forwarded-For SOMENTE do proxy
+      REMOTE_IP_HEADER: ${REMOTE_IP_HEADER:-}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+    ports:
+      # Com HTTPS, defina API_BIND=127.0.0.1 no .env para que só o Caddy alcance a API
+      - "${API_BIND:-0.0.0.0}:8080:8080"
+    mem_limit: 512m
+    networks:
+      sige:
+        aliases:
+          - api
+          - sige-api
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: sige-frontend:latest
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_URL: ${INTERNAL_API_URL:-http://api:8080}
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      # Com HTTPS, defina FRONTEND_BIND=127.0.0.1 no .env para que o tráfego passe pelo Caddy
+      - "${FRONTEND_BIND:-0.0.0.0}:3000:3000"
+    mem_limit: 256m
+    networks:
+      sige:
+        aliases:
+          - frontend
+          - sige-web
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    restart: unless-stopped
+    depends_on:
+      - api
+      - frontend
+    environment:
+      SIGE_HOST: ${SIGE_HOST:-sige.local}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data        # contém a CA local: faça backup e instale o certificado raiz nos clientes
+      - caddy_config:/config
+    mem_limit: 64m
+    networks: [sige]
+
+networks:
+  sige:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24   # faixa fixa: permite confiar apenas no proxy (TRUSTED_PROXIES)
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

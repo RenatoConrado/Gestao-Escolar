@@ -1,0 +1,80 @@
+spring:
+  application:
+    name: sige-api
+  main:
+    banner-mode: "off"
+  web:
+    locale: pt_BR
+    locale-resolver: fixed
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sige}
+    username: ${DB_USER:sige}
+    password: ${DB_PASSWORD:sige}
+    hikari:
+      maximum-pool-size: 5       # edge: poucas conexões
+      minimum-idle: 1
+      connection-timeout: 10000
+  jpa:
+    open-in-view: false          # sem sessão aberta durante a renderização da resposta
+    hibernate:
+      ddl-auto: validate         # o schema é responsabilidade do Flyway
+    properties:
+      hibernate:
+        default_batch_fetch_size: 16   # mitiga N+1 em associações LAZY
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 100       # limita o custo de cada consulta
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: 8080
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 20
+      min-spare: 2
+    accept-count: 50
+    remoteip:                      # só habilite atrás do proxy HTTPS (Caddy); confia SOMENTE no proxy informado
+      remote-ip-header: ${REMOTE_IP_HEADER:}
+      internal-proxies: ${TRUSTED_PROXIES:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    br.edu.sige: INFO
+
+springdoc:                       # Swagger/OpenAPI: DESLIGADO por padrão (exponha só em desenvolvimento)
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+    path: /swagger-ui.html
+    tags-sorter: alpha
+
+app:
+  login-limit:
+    max-por-conta: ${LOGIN_MAX_POR_CONTA:5}      # falhas por (origem + e-mail) na janela
+    max-por-origem: ${LOGIN_MAX_POR_ORIGEM:30}   # falhas por origem (IP) na janela
+    janela: ${LOGIN_JANELA:10m}
+  jwt:
+    secret: ${JWT_SECRET}        # obrigatório (>= 32 caracteres); sem valor padrão de propósito
+    expiracao: ${JWT_EXPIRACAO:8h}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+  bootstrap:
+    admin-nome: ${ADMIN_NOME:Administrador}
+    admin-email: ${ADMIN_EMAIL:}
+    admin-senha: ${ADMIN_SENHA:}
