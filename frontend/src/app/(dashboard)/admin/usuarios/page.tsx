@@ -181,7 +181,7 @@ export default function UsuariosPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Gestão de Usuários & Acessos
+            Gestão de Usuários e Acessos
           </h1>
         </div>
 
@@ -354,7 +354,7 @@ export default function UsuariosPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Perfil de Acesso (RBAC) *</label>
+                  <label className="font-semibold text-foreground">Perfil de Acesso *</label>
                   <select
                     value={perfil}
                     onChange={(e: any) => setPerfil(e.target.value)}
@@ -393,7 +393,7 @@ export default function UsuariosPage() {
                     required
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    O usuário deverá alterá-la no primeiro acesso em /perfil/senha.
+                    O usuário deverá alterá-la no primeiro acesso em Alterar Senha.
                   </p>
                 </div>
               </CardContent>

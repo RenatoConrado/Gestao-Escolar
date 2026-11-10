@@ -68,13 +68,13 @@ export const navItems: NavItem[] = [
     roles: ["ADMIN", "SECRETARIO"],
   },
   {
-    title: "Turmas & Séries",
+    title: "Turmas e Séries",
     href: "/secretaria/turmas",
     icon: BookOpen,
     roles: ["ADMIN", "SECRETARIO", "LEITOR"],
   },
   {
-    title: "Docentes & Atribuições",
+    title: "Docentes e Atribuições",
     href: "/secretaria/atribuicoes",
     icon: FolderKanban,
     roles: ["ADMIN", "SECRETARIO"],
@@ -106,7 +106,7 @@ export const navItems: NavItem[] = [
   },
   // Relatórios
   {
-    title: "Relatórios & Impressão",
+    title: "Relatórios e Impressão",
     href: "/relatorios/resumo",
     icon: FileText,
     roles: ["ADMIN", "SECRETARIO", "LEITOR"],
