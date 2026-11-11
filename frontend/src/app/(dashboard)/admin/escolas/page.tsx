@@ -91,7 +91,7 @@ export default function AdminEscolasPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Polos & Escolas Municipais
+            Polos e Escolas Municipais
           </h1>
         </div>
         {usuario?.perfil === "ADMIN" && (
@@ -176,7 +176,7 @@ export default function AdminEscolasPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Código INEP/SIGE *</label>
+                  <label className="font-semibold text-foreground">Código INEP *</label>
                   <Input
                     value={codigo}
                     onChange={(e) => setCodigo(e.target.value)}
