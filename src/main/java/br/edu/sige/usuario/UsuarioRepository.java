@@ -20,6 +20,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @EntityGraph(attributePaths = {"perfil", "escola"})
     Page<Usuario> findAll(Pageable pageable);
 
+    @EntityGraph(attributePaths = {"perfil", "escola"})
+    Page<Usuario> findByEscolaId(Long escolaId, Pageable pageable);
+
     @Query("select u.ativo as ativo, u.versaoToken as versaoToken from Usuario u where u.id = :id")
     Optional<UsuarioStatusToken> findStatusById(@Param("id") Long id);
 

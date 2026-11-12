@@ -83,7 +83,9 @@ export default function ProfessoresPage() {
         ]);
         setEscolas(listaEscolas);
         setUsuariosProfessor(listaUsuarios.filter((u) => u.perfil === "PROFESSOR"));
-        if (listaEscolas.length > 0 && !escolaId) {
+        if (usuario?.escolaId) {
+          setEscolaId(usuario.escolaId);
+        } else if (listaEscolas.length > 0 && !escolaId) {
           setEscolaId(listaEscolas[0].id);
         }
 
@@ -263,7 +265,7 @@ export default function ProfessoresPage() {
                     <td className="px-4 py-3.5 text-right">
                       <Link href={`/secretaria/atribuicoes?professorId=${prof.id}`}>
                         <Button variant="ghost" size="sm" className="font-semibold text-primary text-xs">
-                          Atribuir
+                          {usuario?.perfil === "LEITOR" ? "Ver Atribuições" : "Atribuir"}
                         </Button>
                       </Link>
                     </td>

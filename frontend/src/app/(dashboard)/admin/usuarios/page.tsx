@@ -137,12 +137,18 @@ export default function UsuariosPage() {
     setErro(null);
 
     const escNome = escolasDisponiveis.find((e) => String(e.id) === escolaId)?.nome;
+    const escolaSelecionada =
+      perfil === "SECRETARIO" || perfil === "PROFESSOR"
+        ? Number(escolaId)
+        : perfil === "LEITOR" && escolaId
+        ? Number(escolaId)
+        : null;
     const novoPayload = {
       nome,
       email,
       senha,
       perfil,
-      escolaId: perfil === "SECRETARIO" || perfil === "PROFESSOR" ? Number(escolaId) : null,
+      escolaId: escolaSelecionada,
       ativo: true,
     };
 
@@ -367,14 +373,19 @@ export default function UsuariosPage() {
                   </select>
                 </div>
 
-                {(perfil === "SECRETARIO" || perfil === "PROFESSOR") && (
+                {(perfil === "SECRETARIO" || perfil === "PROFESSOR" || perfil === "LEITOR") && (
                   <div className="space-y-1.5">
-                    <label className="font-semibold text-foreground">Escola Vinculada *</label>
+                    <label className="font-semibold text-foreground">
+                      {perfil === "LEITOR" ? "Escola Vinculada (opcional para escopo local)" : "Escola Vinculada *"}
+                    </label>
                     <select
                       value={escolaId}
                       onChange={(e) => setEscolaId(e.target.value)}
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                     >
+                      {perfil === "LEITOR" && (
+                        <option value="">Rede Geral (Sem escola fixa)</option>
+                      )}
                       {escolasDisponiveis.map((esc) => (
                           <option key={esc.id} value={esc.id}>
                             {esc.nome}

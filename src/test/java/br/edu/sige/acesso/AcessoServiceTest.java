@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import br.edu.sige.atribuicao.AtribuicaoDocente;
 import br.edu.sige.atribuicao.AtribuicaoDocenteRepository;
 import br.edu.sige.common.ApiException;
 import br.edu.sige.escola.Escola;
@@ -92,5 +93,23 @@ class AcessoServiceTest {
 
         logadoComo(PerfilNome.ADMIN, 1L, null);
         assertThat(acesso.podeVerDadosPessoais()).isTrue();
+    }
+
+    @Test
+    void adminOuSecretarioNaoPodemEscreverEmAtribuicaoInativa() {
+        AtribuicaoDocente inativa = new AtribuicaoDocente();
+        ReflectionTestUtils.setField(inativa, "id", 77L);
+        inativa.setTurma(turma(1L, 5L));
+        inativa.setAtivo(false);
+
+        logadoComo(PerfilNome.ADMIN, 1L, null);
+        assertThatThrownBy(() -> acesso.exigirEscritaNaAtribuicao(inativa))
+                .isInstanceOfSatisfying(ApiException.class,
+                        ex -> assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY));
+
+        logadoComo(PerfilNome.SECRETARIO, 20L, 5L);
+        assertThatThrownBy(() -> acesso.exigirEscritaNaAtribuicao(inativa))
+                .isInstanceOfSatisfying(ApiException.class,
+                        ex -> assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY));
     }
 }

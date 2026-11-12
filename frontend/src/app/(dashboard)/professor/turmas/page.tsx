@@ -179,9 +179,16 @@ export default function ProfessorTurmasPage() {
                       <p className="font-semibold text-sm text-foreground">{aluno.nome}</p>
                       <p className="text-xs text-muted-foreground">Matrícula: {aluno.matricula}</p>
                     </div>
-                    <Badge variant="outline" className="text-[11px]">
-                      Ativo
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[11px]">
+                        Ativo
+                      </Badge>
+                      <Link href={`/secretaria/alunos/${aluno.id}`}>
+                        <Button variant="ghost" size="sm" className="text-xs font-semibold text-primary">
+                          Boletim
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 ))}
                 {!erroAlunos && alunosTurma.length === 0 && <p className="py-4 text-center text-sm text-muted-foreground">Nenhum aluno matriculado nesta turma.</p>}

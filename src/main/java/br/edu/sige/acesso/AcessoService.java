@@ -107,6 +107,13 @@ public class AcessoService {
             }
             case LEITOR -> throw ApiException.proibido("O perfil LEITOR é somente leitura.");
         }
+        exigirAtribuicaoAtiva(atribuicao);
+    }
+
+    public void exigirAtribuicaoAtiva(AtribuicaoDocente atribuicao) {
+        if (!atribuicao.isAtivo()) {
+            throw ApiException.regraDeNegocio("A atribuição docente está inativa.");
+        }
     }
 
     private void exigirMesmaEscola(Long escolaId) {

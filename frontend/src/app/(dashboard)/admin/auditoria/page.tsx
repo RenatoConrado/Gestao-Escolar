@@ -101,9 +101,9 @@ export default function AuditoriaPage() {
                   <td className="px-4 py-3.5">
                     <Badge
                       variant={
-                        evento.acao === "CRIACAO"
+                        evento.acao === "CRIACAO" || evento.acao === "LOGIN"
                           ? "success"
-                          : evento.acao === "ALTERACAO"
+                          : evento.acao === "ATUALIZACAO" || evento.acao === "LOTE"
                           ? "warning"
                           : "destructive"
                       }

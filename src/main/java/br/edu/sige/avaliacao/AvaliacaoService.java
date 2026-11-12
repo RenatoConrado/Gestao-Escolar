@@ -1,5 +1,7 @@
 package br.edu.sige.avaliacao;
 
+import java.time.LocalDate;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -7,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.sige.acesso.AcessoService;
+import br.edu.sige.anoletivo.AnoLetivo;
 import br.edu.sige.atribuicao.AtribuicaoDocente;
 import br.edu.sige.atribuicao.AtribuicaoDocenteRepository;
 import br.edu.sige.auditoria.AcaoAuditoria;
@@ -64,9 +67,8 @@ public class AvaliacaoService {
     public AvaliacaoResponse criar(AvaliacaoRequest req) {
         AtribuicaoDocente atribuicao = atribuicao(req.atribuicaoId());
         acesso.exigirEscritaNaAtribuicao(atribuicao);
-        if (!atribuicao.isAtivo()) {
-            throw ApiException.regraDeNegocio("A atribuição docente está inativa.");
-        }
+        exigirAtribuicaoAtiva(atribuicao);
+        validarDataAnoLetivo(req.data(), atribuicao.getAnoLetivo());
         Avaliacao av = new Avaliacao();
         av.setAtribuicao(atribuicao);
         av.setNome(req.nome().trim());
@@ -82,10 +84,13 @@ public class AvaliacaoService {
     @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO','PROFESSOR')")
     public AvaliacaoResponse atualizar(Long id, AvaliacaoRequest req) {
         Avaliacao av = obter(id);
-        acesso.exigirEscritaNaAtribuicao(av.getAtribuicao());
-        if (!av.getAtribuicao().getId().equals(req.atribuicaoId())) {
+        AtribuicaoDocente atribuicao = av.getAtribuicao();
+        acesso.exigirEscritaNaAtribuicao(atribuicao);
+        exigirAtribuicaoAtiva(atribuicao);
+        if (!atribuicao.getId().equals(req.atribuicaoId())) {
             throw ApiException.regraDeNegocio("Não é permitido mover a avaliação para outra atribuição.");
         }
+        validarDataAnoLetivo(req.data(), atribuicao.getAnoLetivo());
         if (notas.existsByAvaliacaoIdAndValorGreaterThan(id, req.valorMaximo())) {
             throw ApiException.regraDeNegocio("Existem notas lançadas acima do novo valor máximo.");
         }
@@ -103,12 +108,30 @@ public class AvaliacaoService {
     @PreAuthorize("hasAnyRole('ADMIN','PROFESSOR')")
     public void excluir(Long id) {
         Avaliacao av = obter(id);
-        acesso.exigirEscritaNaAtribuicao(av.getAtribuicao());
+        AtribuicaoDocente atribuicao = av.getAtribuicao();
+        acesso.exigirEscritaNaAtribuicao(atribuicao);
+        exigirAtribuicaoAtiva(atribuicao);
         if (notas.existsByAvaliacaoId(id)) {
             throw ApiException.conflito("A avaliação possui notas lançadas; remova-as antes de excluir.");
         }
         auditoria.registrar("AVALIACAO", id, AcaoAuditoria.EXCLUSAO, "nome=" + av.getNome());
         avaliacoes.delete(av);
+    }
+
+    private void exigirAtribuicaoAtiva(AtribuicaoDocente atribuicao) {
+        acesso.exigirAtribuicaoAtiva(atribuicao);
+        if (!atribuicao.isAtivo()) {
+            throw ApiException.regraDeNegocio("A atribuição docente está inativa.");
+        }
+    }
+
+    private void validarDataAnoLetivo(LocalDate data, AnoLetivo ano) {
+        if (ano != null && ano.getDataInicio() != null && ano.getDataFim() != null
+                && (data.isBefore(ano.getDataInicio()) || data.isAfter(ano.getDataFim()))) {
+            throw ApiException.regraDeNegocio(
+                    "A data da avaliação deve estar dentro do período do ano letivo ("
+                            + ano.getDataInicio() + " a " + ano.getDataFim() + ").");
+        }
     }
 
     private AtribuicaoDocente atribuicao(Long id) {

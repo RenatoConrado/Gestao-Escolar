@@ -103,8 +103,16 @@ public class RelatorioService {
         BigDecimal percentual = total == 0 ? BigDecimal.ZERO
                 : BigDecimal.valueOf(presencas * 100.0 / total).setScale(1, RoundingMode.HALF_UP);
 
+        UsuarioAutenticado u = acesso.usuario();
         List<AtribuicaoDocente> atribuicoesDaTurma = atribuicoes.findByTurmaIdAndAnoLetivoIdAndAtivoTrue(
                 matricula.getTurma().getId(), matricula.getAnoLetivo().getId());
+        if (u != null && u.perfil() == PerfilNome.PROFESSOR) {
+            atribuicoesDaTurma = atribuicoesDaTurma.stream()
+                    .filter(a -> a.getProfessor() != null
+                            && a.getProfessor().getUsuario() != null
+                            && u.id().equals(a.getProfessor().getUsuario().getId()))
+                    .toList();
+        }
         List<Long> atribuicaoIds = atribuicoesDaTurma.stream().map(AtribuicaoDocente::getId).toList();
         List<Avaliacao> avaliacoesDaTurma = atribuicaoIds.isEmpty()
                 ? List.of()
@@ -134,9 +142,14 @@ public class RelatorioService {
                             .map(BoletimAlunoResponse.Avaliacao::valor)
                             .filter(java.util.Objects::nonNull)
                             .toList();
-                    BigDecimal media = valores.isEmpty() ? null
+                    BigDecimal somaMaximos = avaliacoesDaDisciplina.stream()
+                            .map(BoletimAlunoResponse.Avaliacao::valorMaximo)
+                            .filter(java.util.Objects::nonNull)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal media = (valores.isEmpty() || somaMaximos.compareTo(BigDecimal.ZERO) <= 0) ? null
                             : valores.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
-                                    .divide(BigDecimal.valueOf(valores.size()), 2, RoundingMode.HALF_UP);
+                                    .multiply(BigDecimal.TEN)
+                                    .divide(somaMaximos, 2, RoundingMode.HALF_UP);
                     return new BoletimAlunoResponse.Disciplina(
                             disciplinaId, entry.getValue().getNome(), media, avaliacoesDaDisciplina);
                 })

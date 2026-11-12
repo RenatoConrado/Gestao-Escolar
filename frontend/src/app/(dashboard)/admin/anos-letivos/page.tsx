@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiRequest, apiRequestAllPages, ApiError } from "@/lib/api";
+import { hojeLocalISO } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 import {
   Plus,
@@ -47,7 +48,7 @@ export default function AnosLetivosPage() {
     async function carregarAnos() {
       try {
         const lista = await apiRequestAllPages<Omit<AnoLetivoItem, "situacao">>("/anos-letivos");
-        const hoje = new Date().toISOString().slice(0, 10);
+        const hoje = hojeLocalISO();
         setAnos(lista.map((item) => ({
           ...item,
           situacao: hoje < item.dataInicio ? "PLANEJADO" : hoje <= item.dataFim ? "VIGENTE" : "ENCERRADO",
@@ -86,7 +87,7 @@ export default function AnosLetivosPage() {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      const hoje = new Date().toISOString().slice(0, 10);
+      const hoje = hojeLocalISO();
       const novoAno: AnoLetivoItem = {
         ...criado,
         situacao: hoje < criado.dataInicio ? "PLANEJADO" : hoje <= criado.dataFim ? "VIGENTE" : "ENCERRADO",

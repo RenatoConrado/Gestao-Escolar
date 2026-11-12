@@ -34,9 +34,13 @@ import br.edu.sige.matricula.MatriculaRepository;
 import br.edu.sige.matricula.SituacaoMatricula;
 import br.edu.sige.nota.Nota;
 import br.edu.sige.nota.NotaRepository;
+import br.edu.sige.professor.Professor;
 import br.edu.sige.professor.ProfessorRepository;
+import br.edu.sige.security.PerfilNome;
+import br.edu.sige.security.UsuarioAutenticado;
 import br.edu.sige.turma.Turma;
 import br.edu.sige.turma.TurmaRepository;
+import br.edu.sige.usuario.Usuario;
 
 class RelatorioServiceTest {
 
@@ -135,6 +139,91 @@ class RelatorioServiceTest {
         assertThat(resultado).containsExactly(new FrequenciaAlunoResponse(
                 10L, "Ana", "A-10", 0, 0, 0, BigDecimal.ZERO));
         verify(acesso).exigirLeituraDaTurma(matricula.getTurma());
+    }
+
+    @Test
+    void boletimNormalizaMediaPeloValorMaximoEAvaliacaoSemNota() {
+        Aluno aluno = aluno(10L, "A-10", "Ana");
+        AnoLetivo ano = anoLetivo(2025);
+        Turma turma = turma(21L, "Turma", escola("Escola"));
+        Matricula matricula = matricula(31L, aluno, turma, ano);
+
+        when(alunos.findById(10L)).thenReturn(Optional.of(aluno));
+        when(matriculas.findByAlunoIdAndSituacao(10L, SituacaoMatricula.ATIVA)).thenReturn(List.of(matricula));
+        when(frequencias.resumirPorAlunoETurma(10L, 21L)).thenReturn(Optional.empty());
+
+        var disciplina = new br.edu.sige.disciplina.Disciplina();
+        disciplina.setNome("História");
+        ReflectionTestUtils.setField(disciplina, "id", 40L);
+        AtribuicaoDocente atribuicao = new AtribuicaoDocente();
+        ReflectionTestUtils.setField(atribuicao, "id", 50L);
+        atribuicao.setDisciplina(disciplina);
+
+        Avaliacao primeira = avaliacao(60L, atribuicao, "Trabalho", "2025-03-10");
+        primeira.setValorMaximo(new BigDecimal("4.00"));
+        Avaliacao segunda = avaliacao(61L, atribuicao, "Prova", "2025-04-10");
+        segunda.setValorMaximo(new BigDecimal("6.00"));
+
+        when(atribuicoes.findByTurmaIdAndAnoLetivoIdAndAtivoTrue(21L, 2025L)).thenReturn(List.of(atribuicao));
+        when(avaliacoes.findByAtribuicaoIdInOrderByDataAsc(List.of(50L))).thenReturn(List.of(primeira, segunda));
+        when(notas.findByAlunoIdAndAvaliacaoAtribuicaoIdIn(10L, List.of(50L)))
+                .thenReturn(List.of(nota(primeira, "4.00")));
+
+        BoletimAlunoResponse boletim = service.boletimDoAluno(10L);
+
+        assertThat(boletim.disciplinas()).singleElement().satisfies(item -> {
+            assertThat(item.media()).isEqualByComparingTo("4.00");
+        });
+    }
+
+    @Test
+    void boletimParaProfessorFiltraApenasDisciplinasDasSuasAtribuicoes() {
+        Aluno aluno = aluno(10L, "A-10", "Ana");
+        AnoLetivo ano = anoLetivo(2025);
+        Turma turma = turma(21L, "Turma", escola("Escola"));
+        Matricula matricula = matricula(31L, aluno, turma, ano);
+
+        when(acesso.usuario()).thenReturn(new UsuarioAutenticado(100L, "prof@sige.local", PerfilNome.PROFESSOR, 1L));
+        when(alunos.findById(10L)).thenReturn(Optional.of(aluno));
+        when(matriculas.findByAlunoIdAndSituacao(10L, SituacaoMatricula.ATIVA)).thenReturn(List.of(matricula));
+        when(frequencias.resumirPorAlunoETurma(10L, 21L)).thenReturn(Optional.empty());
+
+        Usuario usuarioProf1 = new Usuario();
+        ReflectionTestUtils.setField(usuarioProf1, "id", 100L);
+        Professor prof1 = new Professor();
+        prof1.setUsuario(usuarioProf1);
+
+        Usuario usuarioProf2 = new Usuario();
+        ReflectionTestUtils.setField(usuarioProf2, "id", 200L);
+        Professor prof2 = new Professor();
+        prof2.setUsuario(usuarioProf2);
+
+        var mat = new br.edu.sige.disciplina.Disciplina();
+        mat.setNome("Matemática");
+        ReflectionTestUtils.setField(mat, "id", 40L);
+        AtribuicaoDocente atribMat = new AtribuicaoDocente();
+        ReflectionTestUtils.setField(atribMat, "id", 50L);
+        atribMat.setDisciplina(mat);
+        atribMat.setProfessor(prof1);
+
+        var port = new br.edu.sige.disciplina.Disciplina();
+        port.setNome("Português");
+        ReflectionTestUtils.setField(port, "id", 41L);
+        AtribuicaoDocente atribPort = new AtribuicaoDocente();
+        ReflectionTestUtils.setField(atribPort, "id", 51L);
+        atribPort.setDisciplina(port);
+        atribPort.setProfessor(prof2);
+
+        when(atribuicoes.findByTurmaIdAndAnoLetivoIdAndAtivoTrue(21L, 2025L))
+                .thenReturn(List.of(atribMat, atribPort));
+        when(avaliacoes.findByAtribuicaoIdInOrderByDataAsc(List.of(50L))).thenReturn(List.of());
+        when(notas.findByAlunoIdAndAvaliacaoAtribuicaoIdIn(10L, List.of(50L))).thenReturn(List.of());
+
+        BoletimAlunoResponse boletim = service.boletimDoAluno(10L);
+
+        assertThat(boletim.disciplinas()).singleElement().satisfies(item -> {
+            assertThat(item.disciplinaNome()).isEqualTo("Matemática");
+        });
     }
 
     private static Aluno aluno(Long id, String matricula, String nome) {

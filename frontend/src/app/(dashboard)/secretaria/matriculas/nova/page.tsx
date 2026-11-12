@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiRequest, apiRequestAllPages, ApiError } from "@/lib/api";
+import { hojeLocalISO } from "@/lib/utils";
 import { ArrowLeft, Save, AlertCircle, Info } from "lucide-react";
 
 export default function NovaMatriculaPage() {
@@ -15,7 +16,7 @@ export default function NovaMatriculaPage() {
 
   const [alunoId, setAlunoId] = useState("");
   const [turmaId, setTurmaId] = useState("");
-  const [dataMatricula, setDataMatricula] = useState(new Date().toISOString().split("T")[0]);
+  const [dataMatricula, setDataMatricula] = useState(hojeLocalISO());
 
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);

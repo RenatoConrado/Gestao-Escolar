@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, apiRequest, apiRequestAllPages } from "./api";
+import { formatarCpf, hojeLocalISO } from "./utils";
 
 function response(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -93,5 +94,20 @@ describe("apiRequest", () => {
       status: 422,
       message: "Regra de negócio violada",
     } satisfies Partial<ApiError>);
+  });
+});
+
+describe("utils (hojeLocalISO & formatarCpf)", () => {
+  it("formats local date as YYYY-MM-DD without UTC shift", () => {
+    const dataLocal = new Date(2026, 2, 15, 22, 30, 0);
+    expect(hojeLocalISO(dataLocal)).toBe("2026-03-15");
+  });
+
+  it("formats 11-digit CPF, masks when requested, and preserves backend masks", () => {
+    expect(formatarCpf("12345678900")).toBe("123.456.789-00");
+    expect(formatarCpf("12345678900", true)).toBe("***.456.***-**");
+    expect(formatarCpf("***.456.***-**", true)).toBe("***.456.***-**");
+    expect(formatarCpf(null)).toBe("—");
+    expect(formatarCpf(undefined)).toBe("—");
   });
 });

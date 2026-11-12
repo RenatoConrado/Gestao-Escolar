@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.edu.sige.acesso.AcessoService;
 import br.edu.sige.aluno.Aluno;
 import br.edu.sige.aluno.AlunoRepository;
+import br.edu.sige.anoletivo.AnoLetivo;
 import br.edu.sige.auditoria.AcaoAuditoria;
 import br.edu.sige.auditoria.AuditoriaService;
 import br.edu.sige.common.ApiException;
@@ -58,7 +59,7 @@ public class FrequenciaService {
     public FrequenciaResponse registrar(FrequenciaRequest req) {
         Turma turma = turma(req.turmaId());
         acesso.exigirEscritaNaTurma(turma);
-        validarData(req.data());
+        validarData(req.data(), turma.getAnoLetivo());
         if (!matriculas.existsByAlunoIdAndTurmaIdAndSituacao(req.alunoId(), turma.getId(), SituacaoMatricula.ATIVA)) {
             throw ApiException.regraDeNegocio("O aluno não possui matrícula ativa nesta turma.");
         }
@@ -86,7 +87,7 @@ public class FrequenciaService {
     public List<FrequenciaResponse> registrarLote(FrequenciaLoteRequest req) {
         Turma turma = turma(req.turmaId());
         acesso.exigirEscritaNaTurma(turma);
-        validarData(req.data());
+        validarData(req.data(), turma.getAnoLetivo());
 
         Set<Long> matriculados = new HashSet<>(
                 matriculas.findAlunoIdsByTurmaAndSituacao(turma.getId(), SituacaoMatricula.ATIVA));
@@ -154,9 +155,15 @@ public class FrequenciaService {
         frequencias.delete(f);
     }
 
-    private void validarData(LocalDate data) {
+    private void validarData(LocalDate data, AnoLetivo ano) {
         if (data.isAfter(LocalDate.now())) {
             throw ApiException.regraDeNegocio("Não é permitido registrar frequência em data futura.");
+        }
+        if (ano != null && ano.getDataInicio() != null && ano.getDataFim() != null
+                && (data.isBefore(ano.getDataInicio()) || data.isAfter(ano.getDataFim()))) {
+            throw ApiException.regraDeNegocio(
+                    "A data da frequência deve estar dentro do período do ano letivo ("
+                            + ano.getDataInicio() + " a " + ano.getDataFim() + ").");
         }
     }
 

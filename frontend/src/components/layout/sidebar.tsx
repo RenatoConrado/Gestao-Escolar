@@ -18,6 +18,7 @@ import {
   UserCheck,
   FolderKanban,
   KeyRound,
+  Award,
 } from "lucide-react";
 
 export interface NavItem {
@@ -40,20 +41,26 @@ export const navItems: NavItem[] = [
     title: "Minhas Turmas",
     href: "/professor/turmas",
     icon: GraduationCap,
-    roles: ["PROFESSOR", "ADMIN"],
+    roles: ["PROFESSOR"],
   },
   {
     title: "Diário de Frequência",
     href: "/professor/frequencia",
     icon: ClipboardCheck,
-    roles: ["PROFESSOR", "ADMIN"],
+    roles: ["PROFESSOR"],
+  },
+  {
+    title: "Avaliações e Notas",
+    href: "/professor/avaliacoes",
+    icon: Award,
+    roles: ["PROFESSOR"],
   },
   // Módulo da Secretaria
   {
     title: "Alunos",
     href: "/secretaria/alunos",
     icon: Users,
-    roles: ["ADMIN", "SECRETARIO", "LEITOR"],
+    roles: ["ADMIN", "SECRETARIO", "PROFESSOR", "LEITOR"],
   },
   {
     title: "Professores",
@@ -65,7 +72,7 @@ export const navItems: NavItem[] = [
     title: "Matrículas",
     href: "/secretaria/matriculas",
     icon: UserCheck,
-    roles: ["ADMIN", "SECRETARIO"],
+    roles: ["ADMIN", "SECRETARIO", "LEITOR"],
   },
   {
     title: "Turmas e Séries",
@@ -77,7 +84,7 @@ export const navItems: NavItem[] = [
     title: "Docentes e Atribuições",
     href: "/secretaria/atribuicoes",
     icon: FolderKanban,
-    roles: ["ADMIN", "SECRETARIO"],
+    roles: ["ADMIN", "SECRETARIO", "LEITOR"],
   },
   // Módulo Administrativo
   {

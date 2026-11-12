@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { apiRequestAllPages } from "@/lib/api";
+import { useAuth } from "@/context/auth-context";
 import { Plus, Search, Calendar, GraduationCap, School } from "lucide-react";
 
 interface MatriculaItem {
@@ -21,6 +22,7 @@ interface MatriculaItem {
 }
 
 export default function SecretariaMatriculasPage() {
+  const { usuario } = useAuth();
   const [matriculas, setMatriculas] = useState<MatriculaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
@@ -54,7 +56,9 @@ export default function SecretariaMatriculasPage() {
   }, []);
 
   const totalAtivas = matriculas.filter((m) => m.situacao === "ATIVA").length;
-  const totalTransferidas = matriculas.filter((m) => m.situacao === "TRANSFERIDA").length;
+  const totalTransferidas = matriculas.filter(
+    (m) => m.situacao === "TRANSFERIDA" || m.situacao === "CANCELADA"
+  ).length;
 
   const filtradas = matriculas.filter(
     (m) =>
@@ -70,12 +74,14 @@ export default function SecretariaMatriculasPage() {
             Matrículas & Movimentação Escolar
           </h1>
         </div>
-        <Link href="/secretaria/matriculas/nova">
-          <Button className="gap-2 font-semibold shadow-sm">
-            <Plus className="h-4 w-4" />
-            Nova Matrícula
-          </Button>
-        </Link>
+        {(usuario?.perfil === "ADMIN" || usuario?.perfil === "SECRETARIO") && (
+          <Link href="/secretaria/matriculas/nova">
+            <Button className="gap-2 font-semibold shadow-sm">
+              <Plus className="h-4 w-4" />
+              Nova Matrícula
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

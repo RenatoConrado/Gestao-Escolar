@@ -25,7 +25,7 @@ public interface AtribuicaoDocenteRepository extends JpaRepository<AtribuicaoDoc
     @EntityGraph(attributePaths = {"professor", "turma", "turma.escola", "disciplina", "anoLetivo"})
     List<AtribuicaoDocente> findByProfessorUsuarioIdAndAtivoTrue(Long usuarioId);
 
-    @EntityGraph(attributePaths = {"turma", "disciplina", "anoLetivo"})
+    @EntityGraph(attributePaths = {"professor", "professor.usuario", "turma", "disciplina", "anoLetivo"})
     List<AtribuicaoDocente> findByTurmaIdAndAnoLetivoIdAndAtivoTrue(Long turmaId, Long anoLetivoId);
 
     boolean existsByProfessorUsuarioIdAndTurmaIdAndAtivoTrue(Long usuarioId, Long turmaId);
