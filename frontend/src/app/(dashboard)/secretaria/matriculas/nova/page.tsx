@@ -91,7 +91,7 @@ export default function NovaMatriculaPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Nova Matrícula & Enturmação
+            Nova Matrícula e Enturmação
           </h1>
         </div>
       </div>

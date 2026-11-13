@@ -25,13 +25,6 @@ export function Header() {
     <header className="no-print sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-card/80 px-4 md:px-8 backdrop-blur-md">
       {/* Escopo de Contexto */}
       <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
-          {usuario.perfil === "ADMIN" ? (
-            <Shield className="h-4 w-4 text-primary" />
-          ) : (
-            <School className="h-4 w-4 text-primary" />
-          )}
-        </div>
         <div>
           <h2 className="text-sm font-semibold leading-none text-foreground">
             {usuario.perfil === "ADMIN"
@@ -40,13 +33,10 @@ export function Header() {
               ? `Escola Municipal (Polo #${usuario.escolaId})`
               : "Unidade Escolar"}
           </h2>
-          <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
-            Sistema Local de Informação Gerencial
-          </p>
         </div>
       </div>
 
-      {/* Perfil & Ações de Conta */}
+      {/* Perfil e Ações de Conta */}
       <div className="flex items-center gap-3">
         <div className="hidden sm:flex flex-col text-right">
           <span className="text-sm font-medium text-foreground">{usuario.nome}</span>
@@ -58,11 +48,6 @@ export function Header() {
         </Badge>
 
         <div className="flex items-center gap-1 border-l pl-3 ml-1">
-          <Link href="/perfil/senha">
-            <Button variant="ghost" size="icon" title="Alterar Senha" aria-label="Alterar Senha">
-              <KeyRound className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-            </Button>
-          </Link>
           <Button
             variant="ghost"
             size="icon"

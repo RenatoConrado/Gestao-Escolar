@@ -282,7 +282,7 @@ function AvaliacoesContent() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              AVALIAÇÕES & NOTAS
+              AVALIAÇÕES e NOTAS
             </h1>
           </div>
         </div>

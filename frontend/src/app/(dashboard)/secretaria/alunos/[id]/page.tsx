@@ -92,7 +92,7 @@ export default function ProntuarioAlunoPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Prontuário & Boletim Escolar
+              Prontuário e Boletim Escolar
             </h1>
           </div>
         </div>
@@ -241,10 +241,6 @@ export default function ProntuarioAlunoPage() {
               <p className="font-semibold text-foreground">Direção da Unidade</p>
               <p className="text-[10px] text-muted-foreground">Homologação Pedagógica</p>
             </div>
-          </div>
-
-          <div className="text-center text-[10px] text-muted-foreground border-t pt-4">
-            Documento emitido via SIGE • Emissão: {new Date().toLocaleDateString("pt-BR")}
           </div>
         </CardContent>
       </Card>

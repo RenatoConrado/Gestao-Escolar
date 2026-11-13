@@ -247,10 +247,6 @@ export default function RelatorioFrequenciaTurmaPage() {
               <p className="text-[10px] text-muted-foreground">Homologação da Frequência</p>
             </div>
           </div>
-
-          <div className="text-center text-[10px] text-muted-foreground border-t pt-4">
-            Documento emitido via SIGE — Sistema de Informação Gerencial da Educação (Edge Computing)
-          </div>
         </CardContent>
       </Card>
     </div>

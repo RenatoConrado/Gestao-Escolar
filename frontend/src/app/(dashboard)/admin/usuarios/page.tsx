@@ -275,11 +275,10 @@ export default function UsuariosPage() {
                   <td className="px-4 py-3.5 text-xs text-muted-foreground">
                     {u.escolaNome ? (
                       <span className="flex items-center gap-1">
-                        <School className="h-3 w-3 text-primary" />
                         {u.escolaNome}
                       </span>
                     ) : (
-                      <span className="italic text-muted-foreground/70">Rede Geral (Sem escola fixa)</span>
+                      <span className="italic text-muted-foreground/70">Rede Geral</span>
                     )}
                   </td>
                   <td className="px-4 py-3.5 text-center">

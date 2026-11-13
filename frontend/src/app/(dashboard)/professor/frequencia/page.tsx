@@ -194,7 +194,7 @@ function FrequenciaContent() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-24 animate-in fade-in-50 duration-300">
-      {/* Botão Voltar & Cabeçalho */}
+      {/* Botão Voltar e Cabeçalho */}
       <div className="flex items-center gap-3 border-b pb-4">
         <Link href="/professor/turmas">
           <Button variant="ghost" size="icon" title="Voltar para Turmas">
@@ -271,7 +271,7 @@ function FrequenciaContent() {
         </CardContent>
       </Card>
 
-      {/* 2. BARRA DE CONTROLE & BOTÃO "MARCAR TODOS COMO PRESENTES" */}
+      {/* 2. BARRA DE CONTROLE E BOTÃO "MARCAR TODOS COMO PRESENTES" */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-4 rounded-xl border shadow-sm">
         <div className="flex items-center gap-4 text-sm font-medium">
           <span className="flex items-center gap-1.5 text-emerald-600 font-bold">

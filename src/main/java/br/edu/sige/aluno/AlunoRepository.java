@@ -12,7 +12,8 @@ public interface AlunoRepository extends JpaRepository<Aluno, Long> {
 
     @Query("""
             select a from Aluno a
-            where (:nome is null or lower(a.nome) like lower(concat('%', :nome, '%')))
+            where (cast(:nome as string) is null
+                   or lower(a.nome) like lower(concat('%', cast(:nome as string), '%')))
               and (
                   exists (select 1 from Matricula m where m.aluno = a and m.turma.escola.id = :escolaId)
                   or (
@@ -25,7 +26,8 @@ public interface AlunoRepository extends JpaRepository<Aluno, Long> {
 
     @Query("""
             select a from Aluno a
-            where (:nome is null or lower(a.nome) like lower(concat('%', :nome, '%')))
+            where (cast(:nome as string) is null
+                   or lower(a.nome) like lower(concat('%', cast(:nome as string), '%')))
               and exists (
                   select 1 from Matricula m
                   where m.aluno = a

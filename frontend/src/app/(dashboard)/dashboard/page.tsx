@@ -52,17 +52,11 @@ export default function DashboardPage() {
           <h2 className="text-lg font-bold tracking-tight text-foreground">
             Métricas Rápidas
           </h2>
-          <Badge variant="outline" className="text-xs">
-            {usuario.perfil === "ADMIN" && "Rede Municipal"}
-            {usuario.perfil === "SECRETARIO" && "Unidade Escolar"}
-            {usuario.perfil === "PROFESSOR" && "Minhas Turmas"}
-            {usuario.perfil === "LEITOR" && "Visão Consolidada"}
-          </Badge>
         </div>
 
         {usuario.perfil === "ADMIN" && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-l-4 border-l-primary">
+            <Card>
               <CardHeader className="p-4 pb-1">
                 <CardDescription className="text-xs font-medium">Escolas Ativas</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.escolas ?? (loading ? "..." : "—")}</CardTitle>
@@ -72,7 +66,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-blue-500">
+            <Card>
               <CardHeader className="p-4 pb-1">
                 <CardDescription className="text-xs font-medium">Total de Alunos</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.alunosMatriculados ?? (loading ? "..." : "—")}</CardTitle>
@@ -82,7 +76,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-emerald-500">
+            <Card>
               <CardHeader className="p-4 pb-1">
                 <CardDescription className="text-xs font-medium">Professores</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.professores ?? (loading ? "..." : "—")}</CardTitle>
@@ -92,7 +86,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-amber-500">
+            <Card>
               <CardHeader className="p-4 pb-1">
                 <CardDescription className="text-xs font-medium">Turmas em Andamento</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.turmas ?? (loading ? "..." : "—")}</CardTitle>
@@ -106,7 +100,7 @@ export default function DashboardPage() {
 
         {usuario.perfil === "SECRETARIO" && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-l-4 border-l-primary">
+            <Card>
               <CardHeader className="p-4 pb-1">
                 <CardDescription className="text-xs font-medium">Alunos da Escola</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.alunosMatriculados ?? (loading ? "..." : "—")}</CardTitle>
@@ -116,7 +110,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-emerald-500">
+            <Card>
               <CardHeader className="p-4 pb-1">
                 <CardDescription className="text-xs font-medium">Turmas Ativas</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.turmas ?? (loading ? "..." : "—")}</CardTitle>
@@ -126,7 +120,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-blue-500">
+            <Card>
               <CardHeader className="p-4 pb-1">
                 <CardDescription className="text-xs font-medium">Docentes Alocados</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.professores ?? (loading ? "..." : "—")}</CardTitle>
@@ -141,7 +135,7 @@ export default function DashboardPage() {
 
         {(usuario.perfil === "PROFESSOR" || usuario.perfil === "LEITOR") && (
           <div className="grid grid-cols-2 gap-4">
-            <Card className="border-l-4 border-l-primary">
+            <Card>
               <CardHeader className="p-4 pb-1">
                 <CardDescription className="text-xs font-medium">Turmas no escopo</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.turmas ?? (loading ? "..." : "—")}</CardTitle>
@@ -151,7 +145,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-emerald-500">
+            <Card>
               <CardHeader className="p-4 pb-1">
                 <CardDescription className="text-xs font-medium">Alunos matriculados</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.alunosMatriculados ?? (loading ? "..." : "—")}</CardTitle>
@@ -250,7 +244,7 @@ export default function DashboardPage() {
                 <Button variant="outline" className="w-full justify-between h-14 px-4 border-dashed hover:border-solid hover:bg-primary/5">
                   <span className="flex items-center gap-2 font-semibold">
                     <ShieldCheck className="h-5 w-5 text-primary" />
-                    Segurança & Senha
+                    Segurança e Senha
                   </span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </Button>

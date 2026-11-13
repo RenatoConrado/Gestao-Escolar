@@ -108,7 +108,7 @@ export default function AnosLetivosPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Anos Letivos & Calendário
+            Anos Letivos e Calendário
           </h1>
         </div>
 
@@ -131,7 +131,7 @@ export default function AnosLetivosPage() {
 
       {/* Cards de Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-emerald-500">
+        <Card>
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs">Ano Letivo Vigente</CardDescription>
             <CardTitle className="text-2xl font-bold">{anoVigente?.ano ?? "—"}</CardTitle>
@@ -141,7 +141,7 @@ export default function AnosLetivosPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-primary">
+        <Card>
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs">Meta Lei LDB 9.394/96</CardDescription>
             <CardTitle className="text-2xl font-bold">200 Dias</CardTitle>
@@ -151,7 +151,7 @@ export default function AnosLetivosPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-muted">
+        <Card>
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs">Histórico Registrado</CardDescription>
             <CardTitle className="text-2xl font-bold">{anos.length} Anos</CardTitle>

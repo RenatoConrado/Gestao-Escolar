@@ -71,7 +71,7 @@ export default function SecretariaMatriculasPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Matrículas & Movimentação Escolar
+            Matrículas e Movimentação Escolar
           </h1>
         </div>
         {(usuario?.perfil === "ADMIN" || usuario?.perfil === "SECRETARIO") && (
@@ -85,7 +85,7 @@ export default function SecretariaMatriculasPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-emerald-500">
+        <Card>
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs">Matrículas Ativas</CardDescription>
             <CardTitle className="text-2xl font-bold">{totalAtivas}</CardTitle>
@@ -95,23 +95,13 @@ export default function SecretariaMatriculasPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-amber-500">
+        <Card>
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs">Transferências / Canceladas</CardDescription>
             <CardTitle className="text-2xl font-bold">{totalTransferidas}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-1 text-xs text-muted-foreground">
             Movimentação no período
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader className="p-4 pb-1">
-            <CardDescription className="text-xs">Regra de Consistência</CardDescription>
-            <CardTitle className="text-sm font-semibold">Matrícula Única</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-1 text-xs text-muted-foreground">
-            Garantida via índice único parcial no PostgreSQL
           </CardContent>
         </Card>
       </div>
@@ -145,7 +135,6 @@ export default function SecretariaMatriculasPage() {
                 <tr key={mat.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3.5 font-semibold text-foreground">
                     <div className="flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4 text-primary" />
                       {mat.alunoNome}
                     </div>
                   </td>

@@ -74,9 +74,6 @@ export default function AlterarSenhaPage() {
     <div className="max-w-md mx-auto space-y-6 pt-4 animate-in fade-in-50 duration-300">
       <Card className="shadow-md">
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <KeyRound className="h-6 w-6" />
-          </div>
           <CardTitle className="text-xl">ALTERAR SENHA</CardTitle>
         </CardHeader>
         <CardContent>
@@ -151,11 +148,6 @@ export default function AlterarSenhaPage() {
           </form>
         </CardContent>
       </Card>
-
-      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-        <ShieldCheck className="h-4 w-4 text-emerald-600" />
-        <span>Invalidação síncrona de sessões via versão de token</span>
-      </div>
     </div>
   );
 }

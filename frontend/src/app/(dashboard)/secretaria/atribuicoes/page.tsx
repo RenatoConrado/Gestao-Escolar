@@ -296,7 +296,6 @@ function AtribuicoesContent() {
                 <tr key={atrib.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3.5 font-semibold text-foreground">
                     <div className="flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4 text-primary" />
                       {atrib.professorNome}
                     </div>
                   </td>

@@ -39,7 +39,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen w-full min-w-0 overflow-x-hidden bg-background">
+    <div className="flex min-h-screen w-full min-w-0 overflow-x-clip bg-background">
       {/* Sidebar Desktop */}
       <Sidebar />
 
