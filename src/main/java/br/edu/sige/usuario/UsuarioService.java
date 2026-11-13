@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.edu.sige.acesso.AcessoService;
 import br.edu.sige.auditoria.AcaoAuditoria;
 import br.edu.sige.auditoria.AuditoriaService;
 import br.edu.sige.common.ApiException;
@@ -32,16 +33,26 @@ public class UsuarioService {
     private final EscolaRepository escolas;
     private final PasswordEncoder encoder;
     private final ContextoSeguranca contexto;
+    private final AcessoService acesso;
     private final AuditoriaService auditoria;
 
     @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO')")
     public Page<UsuarioResponse> listar(Pageable pageable) {
-        return usuarios.findAll(pageable).map(UsuarioResponse::from);
+        Long escolaId = acesso.escolaRestrita();
+        Page<Usuario> pagina = escolaId != null
+                ? usuarios.findByEscolaId(escolaId, pageable)
+                : usuarios.findAll(pageable);
+        return pagina.map(UsuarioResponse::from);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO')")
     public UsuarioResponse buscar(Long id) {
-        return UsuarioResponse.from(obter(id));
+        Usuario u = obter(id);
+        Long escolaId = acesso.escolaRestrita();
+        if (escolaId != null && !escolaId.equals(idEscola(u))) {
+            throw ApiException.proibido("Acesso negado: usuário de outra unidade escolar.");
+        }
+        return UsuarioResponse.from(u);
     }
 
     @Transactional

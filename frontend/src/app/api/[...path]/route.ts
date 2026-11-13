@@ -22,13 +22,20 @@ async function proxy(request: NextRequest, pathSegments: string[]) {
       body,
     });
 
-    const responseData = await response.text();
     const responseHeaders = new Headers();
     const contentType = response.headers.get("content-type");
     if (contentType) responseHeaders.set("content-type", contentType);
     const retryAfter = response.headers.get("retry-after");
     if (retryAfter) responseHeaders.set("retry-after", retryAfter);
 
+    if (response.status === 204 || response.status === 205 || response.status === 304) {
+      return new NextResponse(null, {
+        status: response.status,
+        headers: responseHeaders,
+      });
+    }
+
+    const responseData = await response.text();
     return new NextResponse(responseData, {
       status: response.status,
       headers: responseHeaders,

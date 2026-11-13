@@ -67,6 +67,7 @@ public class NotaService {
         Avaliacao av = avaliacao(req.avaliacaoId());
         AtribuicaoDocente atribuicao = av.getAtribuicao();
         acesso.exigirEscritaNaAtribuicao(atribuicao);
+        exigirAtribuicaoAtiva(atribuicao);
         validarValor(req.valor(), av);
         if (!matriculas.existsByAlunoIdAndTurmaIdAndSituacao(
                 req.alunoId(), atribuicao.getTurma().getId(), SituacaoMatricula.ATIVA)) {
@@ -92,7 +93,9 @@ public class NotaService {
     @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO','PROFESSOR')")
     public NotaResponse atualizar(Long id, NotaUpdateRequest req) {
         Nota n = obter(id);
-        acesso.exigirEscritaNaAtribuicao(n.getAvaliacao().getAtribuicao());
+        AtribuicaoDocente atribuicao = n.getAvaliacao().getAtribuicao();
+        acesso.exigirEscritaNaAtribuicao(atribuicao);
+        exigirAtribuicaoAtiva(atribuicao);
         validarValor(req.valor(), n.getAvaliacao());
         BigDecimal anterior = n.getValor();
         n.setValor(req.valor());
@@ -106,10 +109,19 @@ public class NotaService {
     @PreAuthorize("hasAnyRole('ADMIN','PROFESSOR')")
     public void excluir(Long id) {
         Nota n = obter(id);
-        acesso.exigirEscritaNaAtribuicao(n.getAvaliacao().getAtribuicao());
+        AtribuicaoDocente atribuicao = n.getAvaliacao().getAtribuicao();
+        acesso.exigirEscritaNaAtribuicao(atribuicao);
+        exigirAtribuicaoAtiva(atribuicao);
         auditoria.registrar("NOTA", id, AcaoAuditoria.EXCLUSAO,
                 "aluno=" + n.getAluno().getId() + ", avaliacao=" + n.getAvaliacao().getId() + ", valor=" + n.getValor());
         notas.delete(n);
+    }
+
+    private void exigirAtribuicaoAtiva(AtribuicaoDocente atribuicao) {
+        acesso.exigirAtribuicaoAtiva(atribuicao);
+        if (!atribuicao.isAtivo()) {
+            throw ApiException.regraDeNegocio("A atribuição docente está inativa.");
+        }
     }
 
     private void validarValor(BigDecimal valor, Avaliacao av) {

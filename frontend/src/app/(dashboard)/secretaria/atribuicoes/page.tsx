@@ -57,8 +57,8 @@ function AtribuicoesContent() {
   const [erroDisciplina, setErroDisciplina] = useState<string | null>(null);
 
   // Opções para modal
-  const [professores, setProfessores] = useState<{ id: number; nome: string }[]>([]);
-  const [turmas, setTurmas] = useState<{ id: number; nome: string }[]>([]);
+  const [professores, setProfessores] = useState<{ id: number; nome: string; escolaId?: number }[]>([]);
+  const [turmas, setTurmas] = useState<{ id: number; nome: string; escolaId?: number }[]>([]);
   const [disciplinas, setDisciplinas] = useState<{ id: number; nome: string }[]>([]);
   const [anosLetivos, setAnosLetivos] = useState<{ id: number; ano: number }[]>([]);
 
@@ -204,6 +204,22 @@ function AtribuicoesContent() {
     }
   };
 
+  const professorSelecionado = professores.find((p) => String(p.id) === profId);
+  const turmasDoProfessor = professorSelecionado?.escolaId
+    ? turmas.filter((t) => !t.escolaId || t.escolaId === professorSelecionado.escolaId)
+    : turmas;
+
+  const selecionarProfessorModal = (novoProfId: string) => {
+    setProfId(novoProfId);
+    const prof = professores.find((p) => String(p.id) === novoProfId);
+    const turmasCompativeis = prof?.escolaId
+      ? turmas.filter((t) => !t.escolaId || t.escolaId === prof.escolaId)
+      : turmas;
+    if (!turmasCompativeis.some((t) => String(t.id) === turmaId)) {
+      setTurmaId(turmasCompativeis[0] ? String(turmasCompativeis[0].id) : "");
+    }
+  };
+
   const filtradas = atribuicoes.filter((a) => {
     const matchBusca =
       a.professorNome.toLowerCase().includes(busca.toLowerCase()) ||
@@ -280,7 +296,6 @@ function AtribuicoesContent() {
                 <tr key={atrib.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3.5 font-semibold text-foreground">
                     <div className="flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4 text-primary" />
                       {atrib.professorNome}
                     </div>
                   </td>
@@ -349,7 +364,7 @@ function AtribuicoesContent() {
                   <label className="font-semibold text-foreground">Professor *</label>
                   <select
                     value={profId}
-                    onChange={(e) => setProfId(e.target.value)}
+                    onChange={(e) => selecionarProfessorModal(e.target.value)}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     {professores.map((p) => (
@@ -367,7 +382,10 @@ function AtribuicoesContent() {
                     onChange={(e) => setTurmaId(e.target.value)}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                   >
-                    {turmas.map((t) => (
+                    {turmasDoProfessor.length === 0 && (
+                      <option value="">Nenhuma turma na escola deste docente</option>
+                    )}
+                    {turmasDoProfessor.map((t) => (
                         <option key={t.id} value={t.id}>
                           {t.nome}
                         </option>

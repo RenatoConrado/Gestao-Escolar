@@ -18,6 +18,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV API_URL=http://api:8080
 
+RUN NODE_ENV=test npm test || { echo "AVISO: os testes do frontend falharam; continuando o build da imagem." >&2; }
+
 RUN npm run build
 
 # ------------------------------------------------------------------------------

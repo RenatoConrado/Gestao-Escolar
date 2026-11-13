@@ -64,13 +64,20 @@ public class ProfessorService {
     @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO')")
     public ProfessorResponse atualizar(Long id, ProfessorRequest req) {
         Professor p = obter(id);
-        acesso.exigirEscolaDoSecretario(p.getEscola().getId());
+        Escola escolaAnterior = p.getEscola();
+        acesso.exigirEscolaDoSecretario(escolaAnterior.getId());
         acesso.exigirEscolaDoSecretario(req.escolaId());
         if (professores.existsByMatriculaAndIdNot(req.matricula().trim(), id)) {
             throw ApiException.conflito("Já existe um professor com esta matrícula.");
         }
         if (professores.existsByCpfAndIdNot(req.cpf(), id)) {
             throw ApiException.conflito("Já existe um professor com este CPF.");
+        }
+        if (!escolaAnterior.getId().equals(req.escolaId())) {
+            if (escolaAnterior.getDiretor() != null && id.equals(escolaAnterior.getDiretor().getId())) {
+                escolaAnterior.setDiretor(null);
+            }
+            escolas.findByDiretorId(id).forEach(e -> e.setDiretor(null));
         }
         aplicar(p, req, id);
         return ProfessorResponse.from(p, true);

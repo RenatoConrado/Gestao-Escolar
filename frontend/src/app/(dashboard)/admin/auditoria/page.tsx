@@ -65,9 +65,6 @@ export default function AuditoriaPage() {
           <Button variant="outline" size="sm" onClick={carregarAuditoria} className="gap-1.5 text-xs">
             <RefreshCw className="h-3.5 w-3.5" /> Atualizar
           </Button>
-          <Badge variant="outline" className="gap-1 font-mono text-xs">
-            <History className="h-3.5 w-3.5 text-primary" /> Tabela: auditoria_eventos
-          </Badge>
         </div>
       </div>
 
@@ -101,9 +98,9 @@ export default function AuditoriaPage() {
                   <td className="px-4 py-3.5">
                     <Badge
                       variant={
-                        evento.acao === "CRIACAO"
+                        evento.acao === "CRIACAO" || evento.acao === "LOGIN"
                           ? "success"
-                          : evento.acao === "ALTERACAO"
+                          : evento.acao === "ATUALIZACAO" || evento.acao === "LOTE"
                           ? "warning"
                           : "destructive"
                       }

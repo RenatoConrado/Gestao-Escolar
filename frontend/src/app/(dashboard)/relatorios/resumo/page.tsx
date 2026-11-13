@@ -52,7 +52,6 @@ export default function RelatoriosResumoPage() {
         </Button>
       </div>
 
-      {/* Relatório Formatado para Impressão Nativa (Evita CPU no Orange Pi) */}
       <Card className="print-page shadow-md border bg-white text-black">
         <CardHeader className="border-b pb-4 text-center">
           <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary no-print">
@@ -76,12 +75,12 @@ export default function RelatoriosResumoPage() {
               <p className="text-2xl font-bold mt-1">{resumo?.turmas ?? 0}</p>
             </div>
             <div className="p-3 bg-muted/30 rounded-lg">
-              <span className="text-xs uppercase text-muted-foreground font-semibold">Alunos Matriculados</span>
+              <span className="text-xs uppercase text-muted-foreground font-semibold">Matriculas</span>
               <p className="text-2xl font-bold mt-1">{resumo?.alunosMatriculados ?? 0}</p>
             </div>
             <div className="p-3 bg-muted/30 rounded-lg">
               <span className="text-xs uppercase text-muted-foreground font-semibold">Professores</span>
-              <p className="text-2xl font-bold mt-1 text-primary">{resumo?.professores ?? "—"}</p>
+              <p className="text-2xl font-bold mt-1">{resumo?.professores ?? "—"}</p>
             </div>
           </div>
 
@@ -111,10 +110,6 @@ export default function RelatoriosResumoPage() {
               </tbody>
             </table>
             </div>
-          </div>
-
-          <div className="pt-8 text-center text-[10px] text-muted-foreground border-t">
-            Documento emitido localmente via SIGE Edge Computing • Sistema Integrado de Gestão Escolar
           </div>
         </CardContent>
       </Card>

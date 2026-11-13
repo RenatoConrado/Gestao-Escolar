@@ -83,7 +83,9 @@ export default function ProfessoresPage() {
         ]);
         setEscolas(listaEscolas);
         setUsuariosProfessor(listaUsuarios.filter((u) => u.perfil === "PROFESSOR"));
-        if (listaEscolas.length > 0 && !escolaId) {
+        if (usuario?.escolaId) {
+          setEscolaId(usuario.escolaId);
+        } else if (listaEscolas.length > 0 && !escolaId) {
           setEscolaId(listaEscolas[0].id);
         }
 
@@ -179,7 +181,7 @@ export default function ProfessoresPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Corpo Docente (Professores)
+            Professores
           </h1>
         </div>
 
@@ -257,13 +259,13 @@ export default function ProfessoresPage() {
                     </td>
                     <td className="px-4 py-3.5 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <School className="h-3 w-3 text-primary" /> {getNomeEscola(prof)}
+                        {getNomeEscola(prof)}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <Link href={`/secretaria/atribuicoes?professorId=${prof.id}`}>
                         <Button variant="ghost" size="sm" className="font-semibold text-primary text-xs">
-                          Atribuir
+                          {usuario?.perfil === "LEITOR" ? "Ver Atribuições" : "Atribuir"}
                         </Button>
                       </Link>
                     </td>
@@ -277,8 +279,8 @@ export default function ProfessoresPage() {
 
       {/* Modal de Cadastro de Professor */}
       {modalNovo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in-20">
-          <Card className="w-full max-w-lg shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm animate-in fade-in-20">
+          <Card className="my-auto w-full max-w-lg shadow-2xl">
             <CardHeader className="flex flex-row items-center justify-between border-b p-4">
               <CardTitle className="text-base font-bold">Cadastrar Novo Docente</CardTitle>
               <Button variant="ghost" size="icon" onClick={() => setModalNovo(false)}>

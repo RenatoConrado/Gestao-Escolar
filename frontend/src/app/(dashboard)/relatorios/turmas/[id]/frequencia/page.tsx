@@ -49,15 +49,16 @@ export default function RelatorioFrequenciaTurmaPage() {
         setTurma(rawTurma);
         setAlunos(rawFreq.map((item) => {
           const percentual = Number(item.percentualPresenca ?? 0);
+          const totalAulas = Number(item.totalRegistros ?? 0);
           return {
             alunoId: item.alunoId,
             matricula: item.matricula,
             nome: item.alunoNome,
-            totalAulas: item.totalRegistros,
+            totalAulas,
             presencas: item.presencas,
             faltas: item.faltas,
             percentual,
-            alertaRisco: percentual < 75,
+            alertaRisco: totalAulas > 0 && percentual < 75,
           };
         }));
       } catch (err) {
@@ -74,11 +75,12 @@ export default function RelatorioFrequenciaTurmaPage() {
 
   const totalAlunos = alunos.length;
   const alunosEmRisco = alunos.filter((a) => a.alertaRisco);
+  const alunosComAula = alunos.filter((a) => a.totalAulas > 0);
   const totalAulasGeral = alunos.length > 0 ? Math.max(...alunos.map((a) => a.totalAulas)) : 0;
   const mediaFrequenciaTurma =
-    totalAlunos > 0
+    alunosComAula.length > 0
       ? (
-          alunos.reduce((acc, curr) => acc + curr.percentual, 0) / totalAlunos
+          alunosComAula.reduce((acc, curr) => acc + curr.percentual, 0) / alunosComAula.length
         ).toFixed(1)
       : "0";
 
@@ -212,18 +214,18 @@ export default function RelatorioFrequenciaTurmaPage() {
                         <td className="p-3 text-center font-mono font-bold">
                           <span
                             className={
-                              aluno.percentual < 75 ? "text-rose-600 font-extrabold" : "text-emerald-700"
+                              aluno.alertaRisco ? "text-rose-600 font-extrabold" : "text-emerald-700"
                             }
                           >
-                            {aluno.percentual.toFixed(1)}%
+                            {aluno.totalAulas > 0 ? `${aluno.percentual.toFixed(1)}%` : "—"}
                           </span>
                         </td>
                         <td className="p-3 text-center">
                           <Badge
-                            variant={aluno.percentual >= 75 ? "success" : "destructive"}
+                            variant={aluno.totalAulas === 0 ? "secondary" : !aluno.alertaRisco ? "success" : "destructive"}
                             className="text-[10px]"
                           >
-                            {aluno.percentual >= 75 ? "Regular" : "Risco de Reprovação"}
+                            {aluno.totalAulas === 0 ? "Sem lançamentos" : !aluno.alertaRisco ? "Regular" : "Risco de Reprovação"}
                           </Badge>
                         </td>
                       </tr>
@@ -244,10 +246,6 @@ export default function RelatorioFrequenciaTurmaPage() {
               <p className="font-semibold text-foreground">Secretaria / Direção Escolar</p>
               <p className="text-[10px] text-muted-foreground">Homologação da Frequência</p>
             </div>
-          </div>
-
-          <div className="text-center text-[10px] text-muted-foreground border-t pt-4">
-            Documento emitido via SIGE — Sistema de Informação Gerencial da Educação (Edge Computing)
           </div>
         </CardContent>
       </Card>

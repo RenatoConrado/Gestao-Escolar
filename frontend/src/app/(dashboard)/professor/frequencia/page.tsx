@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiRequest, apiRequestAllPages, ApiError } from "@/lib/api";
-import { Aluno, SalvarChamadaLoteRequest } from "@/types";
+import { hojeLocalISO } from "@/lib/utils";
+import { Aluno, AtribuicaoDocente, SalvarChamadaLoteRequest } from "@/types";
 import {
   Check,
   X,
@@ -34,9 +35,11 @@ function FrequenciaContent() {
   const searchParams = useSearchParams();
   const turmaIdParam = searchParams.get("turmaId") || "";
 
-  // Data atual formatada para YYYY-MM-DD
-  const dataHoje = new Date().toISOString().split("T")[0];
+  // Data atual formatada para YYYY-MM-DD no fuso local do navegador
+  const dataHoje = hojeLocalISO();
   const [dataSelecionada, setDataSelecionada] = useState(dataHoje);
+  const [turmaIdSelecionada, setTurmaIdSelecionada] = useState(turmaIdParam);
+  const [minhasTurmas, setMinhasTurmas] = useState<{ id: number; nome: string }[]>([]);
 
   const [listaAlunos, setListaAlunos] = useState<LinhaAlunoChamada[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,18 +48,50 @@ function FrequenciaContent() {
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
+    if (turmaIdParam) {
+      setTurmaIdSelecionada(turmaIdParam);
+    }
+  }, [turmaIdParam]);
+
+  useEffect(() => {
+    async function carregarMinhasTurmas() {
+      try {
+        const atribs = await apiRequest<AtribuicaoDocente[]>("/atribuicoes/minhas");
+        const mapa = new Map<number, string>();
+        atribs.forEach((a) => {
+          if (!mapa.has(a.turmaId)) {
+            mapa.set(a.turmaId, `${a.turmaNome} — ${a.serie} (${a.escolaNome})`);
+          }
+        });
+        const opcoes = Array.from(mapa.entries()).map(([id, nome]) => ({ id, nome }));
+        setMinhasTurmas(opcoes);
+        if (!turmaIdParam && opcoes.length > 0) {
+          setTurmaIdSelecionada(String(opcoes[0].id));
+        }
+      } catch {
+        // Caso não haja atribuições ou ocorra erro, mantém seleção atual
+      }
+    }
+    carregarMinhasTurmas();
+  }, [turmaIdParam]);
+
+  useEffect(() => {
     async function carregarDadosChamada() {
+      if (!turmaIdSelecionada) {
+        setListaAlunos([]);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setSucesso(false);
       setErro(null);
 
       try {
-        if (!turmaIdParam) throw new Error("Selecione uma turma na página Minhas Turmas.");
         // 1. Carrega alunos da turma
         const [alunos, frequenciasSalvas] = await Promise.all([
-          apiRequest<Aluno[]>(`/turmas/${turmaIdParam}/alunos`),
+          apiRequest<Aluno[]>(`/turmas/${turmaIdSelecionada}/alunos`),
           apiRequestAllPages<any>("/frequencias", {
-            params: { turmaId: Number(turmaIdParam), data: dataSelecionada },
+            params: { turmaId: Number(turmaIdSelecionada), data: dataSelecionada },
           }),
         ]);
 
@@ -87,7 +122,7 @@ function FrequenciaContent() {
     }
 
     carregarDadosChamada();
-  }, [turmaIdParam, dataSelecionada]);
+  }, [turmaIdSelecionada, dataSelecionada]);
 
   // Ação em lote: Marcar todos como presentes (conforme wireframe)
   const marcarTodosPresentes = () => {
@@ -125,11 +160,12 @@ function FrequenciaContent() {
 
     if (listaAlunos.length === 0) {
       setErro("Não há alunos carregados para salvar a chamada.");
+      setSalvando(false);
       return;
     }
 
     const payload: SalvarChamadaLoteRequest = {
-      turmaId: Number(turmaIdParam),
+      turmaId: Number(turmaIdSelecionada),
       data: dataSelecionada,
       registros: listaAlunos.map((item) => ({
         alunoId: item.alunoId,
@@ -158,7 +194,7 @@ function FrequenciaContent() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-24 animate-in fade-in-50 duration-300">
-      {/* Botão Voltar & Cabeçalho */}
+      {/* Botão Voltar e Cabeçalho */}
       <div className="flex items-center gap-3 border-b pb-4">
         <Link href="/professor/turmas">
           <Button variant="ghost" size="icon" title="Voltar para Turmas">
@@ -170,13 +206,13 @@ function FrequenciaContent() {
             FREQUÊNCIA
           </h1>
           <p className="text-xs text-muted-foreground">
-            {turmaIdParam ? `Diário de classe eletrônico da turma #${turmaIdParam}` : "Selecione uma turma em Minhas Turmas para fazer a chamada."}
+            {turmaIdSelecionada ? `Diário de classe eletrônico da turma #${turmaIdSelecionada}` : "Selecione uma turma para fazer a chamada."}
           </p>
         </div>
       </div>
 
       {sucesso && (
-        <Alert variant="success">
+        <Alert variant="success" aria-live="polite">
           <FileCheck className="h-4 w-4" />
           <AlertTitle>Chamada Salva com Sucesso!</AlertTitle>
           <AlertDescription>
@@ -186,37 +222,56 @@ function FrequenciaContent() {
       )}
 
       {erro && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" role="alert">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Falha ao Salvar</AlertTitle>
           <AlertDescription>{erro}</AlertDescription>
         </Alert>
       )}
 
-      {/* 1. SELEÇÃO DE DATA E HISTÓRICO CONFORME O WIREFRAME */}
+      {/* 1. SELEÇÃO DE TURMA E DATA */}
       <Card className="shadow-sm">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Calendar className="h-4 w-4 text-primary" />
-            Histórico e Seleção de Data
+            Histórico, Turma e Seleção de Data
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 pt-0">
-          <div className="mt-2">
-            <label htmlFor="data-chamada" className="text-xs font-medium">Data da chamada</label>
-            <Input
-              id="data-chamada"
-              type="date"
-              value={dataSelecionada}
-              max={dataHoje}
-              onChange={(event) => setDataSelecionada(event.target.value)}
-              className="mt-1"
-            />
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {minhasTurmas.length > 0 && (
+              <div>
+                <label htmlFor="turma-chamada" className="text-xs font-medium">Turma</label>
+                <select
+                  id="turma-chamada"
+                  value={turmaIdSelecionada}
+                  onChange={(e) => setTurmaIdSelecionada(e.target.value)}
+                  className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {minhasTurmas.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div>
+              <label htmlFor="data-chamada" className="text-xs font-medium">Data da chamada</label>
+              <Input
+                id="data-chamada"
+                type="date"
+                value={dataSelecionada}
+                max={dataHoje}
+                onChange={(event) => setDataSelecionada(event.target.value)}
+                className="mt-1"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* 2. BARRA DE CONTROLE & BOTÃO "MARCAR TODOS COMO PRESENTES" */}
+      {/* 2. BARRA DE CONTROLE E BOTÃO "MARCAR TODOS COMO PRESENTES" */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-4 rounded-xl border shadow-sm">
         <div className="flex items-center gap-4 text-sm font-medium">
           <span className="flex items-center gap-1.5 text-emerald-600 font-bold">
@@ -267,6 +322,7 @@ function FrequenciaContent() {
                 {/* Switch de Presença: Verde (Presente) / Vermelho (Falta) conforme wireframe */}
                 <button
                   type="button"
+                  aria-label={`Presença de ${aluno.nome}: ${aluno.presente ? "Presente" : "Falta"}`}
                   onClick={() => togglePresenca(aluno.alunoId)}
                   className={`h-12 w-12 rounded-xl flex items-center justify-center font-bold text-white shadow-sm transition-transform active:scale-90 select-none ${
                     aluno.presente
@@ -296,6 +352,7 @@ function FrequenciaContent() {
               <div className="w-full sm:w-64">
                 <Input
                   type="text"
+                  aria-label={`Justificativa de ${aluno.nome}`}
                   value={aluno.justificativa}
                   onChange={(e) => alterarJustificativa(aluno.alunoId, e.target.value)}
                   className="h-10 text-xs bg-background/80"
@@ -307,7 +364,7 @@ function FrequenciaContent() {
       </Card>
 
       {/* 4. BOTÃO FIXO NO RODAPÉ: "SALVAR CHAMADA" */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 border-t p-4 backdrop-blur-md shadow-2xl flex justify-center">
+      <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-30 bg-background/95 border-t p-4 backdrop-blur-md shadow-2xl flex justify-center">
         <div className="w-full max-w-4xl flex items-center justify-between gap-4">
           <div className="hidden sm:block text-xs text-muted-foreground">
             Lote atômico de {listaAlunos.length} registros para {dataSelecionada}

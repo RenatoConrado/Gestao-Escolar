@@ -7,12 +7,15 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/auth-context";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, ApiError } from "@/lib/api";
+import { formatarCpf } from "@/lib/utils";
 import { Aluno, BoletimAluno } from "@/types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   ArrowLeft,
   Printer,
   AlertCircle,
+  Info,
 } from "lucide-react";
 
 export default function ProntuarioAlunoPage() {
@@ -22,20 +25,27 @@ export default function ProntuarioAlunoPage() {
 
   const [aluno, setAluno] = useState<Aluno | null>(null);
   const [boletim, setBoletim] = useState<BoletimAluno | null>(null);
+  const [semMatriculaAtiva, setSemMatriculaAtiva] = useState(false);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     async function carregarAluno() {
       try {
-        const [dadosAluno, dadosBoletim] = await Promise.all([
-          apiRequest<Aluno>(`/alunos/${alunoId}`),
-          apiRequest<BoletimAluno>(`/relatorios/alunos/${alunoId}`),
-        ]);
+        const dadosAluno = await apiRequest<Aluno>(`/alunos/${alunoId}`);
         setAluno(dadosAluno);
-        setBoletim(dadosBoletim);
+        try {
+          const dadosBoletim = await apiRequest<BoletimAluno>(`/relatorios/alunos/${alunoId}`);
+          setBoletim(dadosBoletim);
+          setSemMatriculaAtiva(false);
+        } catch (errBoletim) {
+          setBoletim(null);
+          if (errBoletim instanceof ApiError && errBoletim.status === 404) {
+            setSemMatriculaAtiva(true);
+          }
+        }
       } catch (err) {
-        setErro(err instanceof Error ? err.message : "Não foi possível carregar o prontuário e o boletim.");
+        setErro(err instanceof Error ? err.message : "Não foi possível carregar o prontuário do aluno.");
       } finally {
         setLoading(false);
       }
@@ -43,14 +53,6 @@ export default function ProntuarioAlunoPage() {
 
     carregarAluno();
   }, [alunoId]);
-
-  const exibirCpf = (cpf?: string) => {
-    if (!cpf) return "Não informado";
-    if (usuario?.perfil === "ADMIN" || usuario?.perfil === "SECRETARIO") {
-      return cpf;
-    }
-    return "***." + cpf.split(".")[1] + ".***-**";
-  };
 
   const handleImprimir = () => {
     window.print();
@@ -90,7 +92,7 @@ export default function ProntuarioAlunoPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Prontuário & Boletim Escolar
+              Prontuário e Boletim Escolar
             </h1>
           </div>
         </div>
@@ -101,6 +103,16 @@ export default function ProntuarioAlunoPage() {
         </Button>
       </div>
 
+      {semMatriculaAtiva && (
+        <Alert variant="warning" className="no-print">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Sem matrícula ativa</AlertTitle>
+          <AlertDescription>
+            Este aluno ainda não possui matrícula ativa no ano letivo corrente. Os dados cadastrais do prontuário estão disponíveis abaixo.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* ÁREA IMPRIMÍVEL DO BOLETIM */}
       <Card className="print-page shadow-md border bg-card text-card-foreground">
         {/* Cabeçalho Oficial do Boletim */}
@@ -108,9 +120,13 @@ export default function ProntuarioAlunoPage() {
           <div className="flex justify-between items-start">
             <div className="text-left space-y-1">
               <h2 className="text-lg font-bold uppercase text-foreground">
-                Escola Municipal Monteiro Lobato
+                {boletim?.escolaNome || "Secretaria Municipal de Educação"}
               </h2>
-              <p className="text-xs text-muted-foreground">{boletim?.escolaNome || "Escola não informada"}</p>
+              <p className="text-xs text-muted-foreground">
+                {boletim?.turmaNome
+                  ? `Boletim e Prontuário Escolar — ${boletim.turmaNome}`
+                  : "Prontuário Cadastral do Aluno (Sem matrícula ativa)"}
+              </p>
             </div>
             <Badge variant="outline" className="font-mono text-xs">
               Ano Letivo {boletim?.anoLetivo ?? "—"}
@@ -131,7 +147,9 @@ export default function ProntuarioAlunoPage() {
             </div>
             <div>
               <span className="text-muted-foreground font-semibold">CPF (LGPD):</span>
-              <p className="text-sm font-mono text-foreground mt-0.5">{exibirCpf(aluno.cpf)}</p>
+              <p className="text-sm font-mono text-foreground mt-0.5">
+                {formatarCpf(aluno.cpf, usuario?.perfil !== "ADMIN" && usuario?.perfil !== "SECRETARIO")}
+              </p>
             </div>
             <div>
               <span className="text-muted-foreground font-semibold">Responsável:</span>
@@ -185,7 +203,7 @@ export default function ProntuarioAlunoPage() {
                       </td>
                     </tr>
                   ))}
-                  {boletim?.disciplinas.length === 0 && (
+                  {(!boletim || boletim.disciplinas.length === 0) && (
                     <tr><td colSpan={4} className="p-4 text-center text-muted-foreground">Nenhuma disciplina atribuída neste ano letivo.</td></tr>
                   )}
                 </tbody>
@@ -223,10 +241,6 @@ export default function ProntuarioAlunoPage() {
               <p className="font-semibold text-foreground">Direção da Unidade</p>
               <p className="text-[10px] text-muted-foreground">Homologação Pedagógica</p>
             </div>
-          </div>
-
-          <div className="text-center text-[10px] text-muted-foreground border-t pt-4">
-            Documento emitido via SIGE • Emissão: {new Date().toLocaleDateString("pt-BR")}
           </div>
         </CardContent>
       </Card>

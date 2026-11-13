@@ -26,11 +26,13 @@ export interface Escola {
   diretorId?: number | null;
 }
 
+export type Turno = 'MANHA' | 'TARDE' | 'NOITE' | 'INTEGRAL';
+
 export interface Turma {
   id: number;
   nome: string;
   serie: string;
-  turno: 'MATUTINO' | 'VESPERTINO' | 'NOTURNO' | 'INTEGRAL';
+  turno: Turno;
   anoLetivoId: number;
   anoLetivo: number;
   escolaId: number;
@@ -90,11 +92,6 @@ export interface ResumoRedeResponse {
   turmas?: number;
   professores?: number | null;
   escolas?: number | null;
-  totalEscolas?: number;
-  totalAlunosMatriculados?: number;
-  totalProfessores?: number;
-  totalTurmasAbertas?: number;
-  frequenciaMediaRede?: number;
 }
 
 export interface ResumoEscolaResponse {

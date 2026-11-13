@@ -5,9 +5,10 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, UserPlus, Filter, Printer } from "lucide-react";
+import { Search, UserPlus, Printer } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { apiRequestAllPages } from "@/lib/api";
+import { formatarCpf } from "@/lib/utils";
 
 export default function SecretariaAlunosPage() {
   const { usuario } = useAuth();
@@ -38,18 +39,16 @@ export default function SecretariaAlunosPage() {
     carregar();
   }, []);
 
-  // Regra LGPD: Mascara CPF para professor e leitor
+  // Regra LGPD: Formata CPF para ADMIN/SECRETARIO e preserva máscara/omissão para demais perfis
   const exibirCpf = (cpf?: string) => {
-    if (!cpf) return "—";
-    if (usuario?.perfil === "ADMIN" || usuario?.perfil === "SECRETARIO") {
-      return cpf;
-    }
-    return "***." + (cpf.split(".")[1] || "000") + ".***-**";
+    const deveMascarar = usuario?.perfil !== "ADMIN" && usuario?.perfil !== "SECRETARIO";
+    return formatarCpf(cpf, deveMascarar);
   };
 
   const filtrados = alunos.filter((a) =>
     a.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    a.matricula.includes(busca)
+    a.matricula.includes(busca) ||
+    a.responsavel.toLowerCase().includes(busca.toLowerCase())
   );
 
   return (
@@ -86,10 +85,6 @@ export default function SecretariaAlunosPage() {
           />
         </div>
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
-        <Button variant="outline" className="gap-2">
-          <Filter className="h-4 w-4" />
-          Filtros
-        </Button>
       </div>
 
       <Card className="shadow-sm overflow-hidden">

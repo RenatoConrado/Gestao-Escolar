@@ -12,7 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface AvaliacaoRepository extends JpaRepository<Avaliacao, Long> {
 
-    @EntityGraph(attributePaths = {"atribuicao", "atribuicao.turma", "atribuicao.turma.escola"})
+    @EntityGraph(attributePaths = {"atribuicao", "atribuicao.anoLetivo", "atribuicao.turma", "atribuicao.turma.escola"})
     Optional<Avaliacao> findComAtribuicaoById(Long id);
 
     @EntityGraph(attributePaths = "atribuicao")

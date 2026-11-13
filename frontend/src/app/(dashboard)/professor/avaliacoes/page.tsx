@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiRequest, apiRequestAllPages } from "@/lib/api";
-import { Aluno } from "@/types";
+import { hojeLocalISO } from "@/lib/utils";
+import { Aluno, AtribuicaoDocente } from "@/types";
 import {
   Plus,
   ArrowLeft,
@@ -41,6 +42,10 @@ function AvaliacoesContent() {
   const atribuicaoIdParam = searchParams.get("atribuicaoId") || "";
   const turmaIdParam = searchParams.get("turmaId") || "";
 
+  const [atribuicaoIdSelecionada, setAtribuicaoIdSelecionada] = useState(atribuicaoIdParam);
+  const [turmaIdSelecionada, setTurmaIdSelecionada] = useState(turmaIdParam);
+  const [minhasAtribuicoes, setMinhasAtribuicoes] = useState<AtribuicaoDocente[]>([]);
+
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [avaliacaoAtiva, setAvaliacaoAtiva] = useState<Avaliacao | null>(null);
   const [linhasNotas, setLinhasNotas] = useState<LinhaNotaAluno[]>([]);
@@ -53,15 +58,38 @@ function AvaliacoesContent() {
   // Modal de Criação de Nova Avaliação
   const [modalAberta, setModalAberta] = useState(false);
   const [nomeNovaAvaliacao, setNomeNovaAvaliacao] = useState("");
-  const [dataNovaAvaliacao, setDataNovaAvaliacao] = useState(new Date().toISOString().split("T")[0]);
+  const [dataNovaAvaliacao, setDataNovaAvaliacao] = useState(hojeLocalISO());
   const [valorMaximoNova, setValorMaximoNova] = useState("10.00");
   const [criando, setCriando] = useState(false);
+
+  useEffect(() => {
+    if (atribuicaoIdParam) setAtribuicaoIdSelecionada(atribuicaoIdParam);
+    if (turmaIdParam) setTurmaIdSelecionada(turmaIdParam);
+  }, [atribuicaoIdParam, turmaIdParam]);
+
+  useEffect(() => {
+    async function carregarMinhasAtribuicoes() {
+      try {
+        const atribs = await apiRequest<AtribuicaoDocente[]>("/atribuicoes/minhas");
+        setMinhasAtribuicoes(atribs);
+        if (!atribuicaoIdParam && atribs.length > 0) {
+          setAtribuicaoIdSelecionada(String(atribs[0].id));
+          setTurmaIdSelecionada(String(atribs[0].turmaId));
+        } else if (atribuicaoIdParam && !turmaIdParam) {
+          const encontrada = atribs.find((a) => String(a.id) === atribuicaoIdParam);
+          if (encontrada) setTurmaIdSelecionada(String(encontrada.turmaId));
+        }
+      } catch {
+        // Mantém seleção via query param caso o endpoint não retorne atribuições
+      }
+    }
+    carregarMinhasAtribuicoes();
+  }, [atribuicaoIdParam, turmaIdParam]);
 
   // 1. Carrega as avaliações desta atribuição
   useEffect(() => {
     async function carregarAvaliacoes() {
-      if (!atribuicaoIdParam) {
-        setErro("Selecione uma atribuição docente para consultar as avaliações.");
+      if (!atribuicaoIdSelecionada) {
         setAvaliacoes([]);
         setAvaliacaoAtiva(null);
         setLoading(false);
@@ -71,7 +99,7 @@ function AvaliacoesContent() {
       setErro(null);
       try {
         const lista = await apiRequestAllPages<Avaliacao>("/avaliacoes", {
-          params: { atribuicaoId: Number(atribuicaoIdParam) },
+          params: { atribuicaoId: Number(atribuicaoIdSelecionada) },
         });
         setAvaliacoes(lista);
         setAvaliacaoAtiva(lista[0] ?? null);
@@ -85,7 +113,7 @@ function AvaliacoesContent() {
     }
 
     carregarAvaliacoes();
-  }, [atribuicaoIdParam]);
+  }, [atribuicaoIdSelecionada]);
 
   // 2. Carrega os alunos e as notas da avaliação ativa
   useEffect(() => {
@@ -98,9 +126,9 @@ function AvaliacoesContent() {
       setErro(null);
 
       try {
-        if (!turmaIdParam) throw new Error("A turma não foi informada.");
+        if (!turmaIdSelecionada) throw new Error("A turma não foi informada.");
         const [alunos, notasSalvas] = await Promise.all([
-          apiRequest<Aluno[]>(`/turmas/${turmaIdParam}/alunos`),
+          apiRequest<Aluno[]>(`/turmas/${turmaIdSelecionada}/alunos`),
           apiRequestAllPages<any>(`/notas/avaliacao/${avaliacaoId}`),
         ]);
 
@@ -128,7 +156,7 @@ function AvaliacoesContent() {
     }
 
     carregarNotas();
-  }, [avaliacaoAtiva, turmaIdParam]);
+  }, [avaliacaoAtiva, turmaIdSelecionada]);
 
   // Alterar valor da nota individual
   const alterarNota = (alunoId: number, valorDigitado: string) => {
@@ -145,7 +173,7 @@ function AvaliacoesContent() {
     setCriando(true);
     setErro(null);
 
-    if (!atribuicaoIdParam) {
+    if (!atribuicaoIdSelecionada) {
       setErro("A atribuição docente não foi informada.");
       setCriando(false);
       return;
@@ -162,7 +190,7 @@ function AvaliacoesContent() {
       const nova = await apiRequest<Avaliacao>("/avaliacoes", {
         method: "POST",
         body: JSON.stringify({
-          atribuicaoId: Number(atribuicaoIdParam),
+          atribuicaoId: Number(atribuicaoIdSelecionada),
           nome: nomeNovaAvaliacao,
           data: dataNovaAvaliacao,
           valorMaximo: valorMax,
@@ -181,7 +209,7 @@ function AvaliacoesContent() {
     }
   };
 
-  // Salvar notas digitadas
+  // Salvar notas digitadas (incluindo exclusão quando nota existente é limpa - F10)
   const handleSalvarNotas = async () => {
     if (!avaliacaoAtiva) return;
     setSalvando(true);
@@ -201,7 +229,7 @@ function AvaliacoesContent() {
     }
 
     try {
-      // Salva notas individualmente (cria se nova, atualiza se já existir)
+      // Salva notas individualmente (cria se nova, atualiza se já existir, exclui se campo foi limpo)
       const atualizadas: LinhaNotaAluno[] = [];
       for (const linha of linhasNotas) {
         if (linha.valor.trim() !== "") {
@@ -223,6 +251,11 @@ function AvaliacoesContent() {
             });
             atualizadas.push({ ...linha, notaId: resp?.id, valor: String(num) });
           }
+        } else if (linha.notaId) {
+          await apiRequest(`/notas/${linha.notaId}`, {
+            method: "DELETE",
+          });
+          atualizadas.push({ ...linha, notaId: undefined, valor: "" });
         } else {
           atualizadas.push(linha);
         }
@@ -249,19 +282,19 @@ function AvaliacoesContent() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              AVALIAÇÕES & NOTAS
+              AVALIAÇÕES e NOTAS
             </h1>
           </div>
         </div>
 
-        <Button onClick={() => setModalAberta(true)} disabled={!atribuicaoIdParam} className="gap-2 font-semibold">
+        <Button onClick={() => setModalAberta(true)} disabled={!atribuicaoIdSelecionada} className="gap-2 font-semibold">
           <Plus className="h-4 w-4" />
           Nova Avaliação
         </Button>
       </div>
 
       {sucesso && (
-        <Alert variant="success">
+        <Alert variant="success" aria-live="polite">
           <FileCheck className="h-4 w-4" />
           <AlertTitle>Operação Concluída</AlertTitle>
           <AlertDescription>
@@ -271,12 +304,42 @@ function AvaliacoesContent() {
       )}
 
       {erro && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" role="alert">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Validação de Notas</AlertTitle>
           <AlertDescription>{erro}</AlertDescription>
         </Alert>
       )}
+
+      {minhasAtribuicoes.length > 0 && (
+        <Card className="shadow-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-semibold">
+              Atribuição Docente (Turma e Disciplina)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <select
+              aria-label="Selecionar atribuição docente"
+              value={atribuicaoIdSelecionada}
+              onChange={(e) => {
+                const novoId = e.target.value;
+                setAtribuicaoIdSelecionada(novoId);
+                const atrib = minhasAtribuicoes.find((a) => String(a.id) === novoId);
+                if (atrib) setTurmaIdSelecionada(String(atrib.turmaId));
+              }}
+              className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {minhasAtribuicoes.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.turmaNome} — {a.disciplinaNome} ({a.escolaNome})
+                </option>
+              ))}
+            </select>
+          </CardContent>
+        </Card>
+      )}
+
       {!loading && avaliacoes.length === 0 && !erro && (
         <p className="text-sm text-muted-foreground">Nenhuma avaliação cadastrada para esta atribuição.</p>
       )}
@@ -343,6 +406,7 @@ function AvaliacoesContent() {
                     step="0.1"
                     min="0"
                     max={Number(avaliacaoAtiva.valorMaximo)}
+                    aria-label={`Nota de ${item.nome}`}
                     value={item.valor}
                     onChange={(e) => alterarNota(item.alunoId, e.target.value)}
                     className="w-24 text-center font-bold font-mono h-11 text-base"
@@ -358,7 +422,7 @@ function AvaliacoesContent() {
       )}
 
       {/* Botão Fixo de Salvar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 border-t p-4 backdrop-blur-md shadow-2xl flex justify-center">
+      <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-30 bg-background/95 border-t p-4 backdrop-blur-md shadow-2xl flex justify-center">
         <div className="w-full max-w-4xl flex items-center justify-between gap-4">
           <div className="hidden sm:block text-xs text-muted-foreground">
             Validação ativa: nota máxima permitida de {Number(avaliacaoAtiva?.valorMaximo ?? 10).toFixed(1)} pts

@@ -226,7 +226,7 @@ export default function TurmasPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Gestão de Turmas & Séries
+            Gestão de Turmas e Séries
           </h1>
         </div>
 
