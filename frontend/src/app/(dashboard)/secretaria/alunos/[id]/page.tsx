@@ -28,6 +28,7 @@ export default function ProntuarioAlunoPage() {
   const [semMatriculaAtiva, setSemMatriculaAtiva] = useState(false);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [sucesso, setSucesso] = useState("");
 
   useEffect(() => {
     async function carregarAluno() {
@@ -56,6 +57,16 @@ export default function ProntuarioAlunoPage() {
 
   const handleImprimir = () => {
     window.print();
+  };
+
+  const excluirAluno = async () => {
+    if (!aluno || !window.confirm(`Certeza de que quer excluir o cadastro de ${aluno.nome}?`)) return;
+    try {
+      await apiRequest(`/alunos/${aluno.id}`, { method: "DELETE" });
+      window.location.assign("/secretaria/alunos");
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : "Não foi possível excluir o cadastro.");
+    }
   };
 
   if (loading) {
@@ -97,12 +108,20 @@ export default function ProntuarioAlunoPage() {
           </div>
         </div>
 
-        <Button onClick={handleImprimir} className="gap-2 font-bold shadow-md">
-          <Printer className="h-4 w-4" />
-          Imprimir Boletim (A4)
-        </Button>
+        <div className="flex gap-2">
+          {(usuario?.perfil === "ADMIN" || usuario?.perfil === "SECRETARIO") && <>
+            <Link href={`/secretaria/alunos/${aluno.id}/editar`}><Button variant="outline">Editar cadastro</Button></Link>
+            <Button variant="destructive" onClick={excluirAluno}>Excluir aluno</Button>
+          </>}
+          <Button onClick={handleImprimir} className="gap-2 font-bold shadow-md">
+            <Printer className="h-4 w-4" />
+            Imprimir Boletim (A4)
+          </Button>
+        </div>
       </div>
 
+      {sucesso && <p role="status" className="no-print text-sm text-emerald-700">{sucesso}</p>}
+      {erro && <p role="alert" className="no-print text-sm text-destructive">{erro}</p>}
       {semMatriculaAtiva && (
         <Alert variant="warning" className="no-print">
           <Info className="h-4 w-4" />
@@ -146,7 +165,7 @@ export default function ProntuarioAlunoPage() {
               <p className="text-sm font-mono font-bold text-foreground mt-0.5">{aluno.matricula}</p>
             </div>
             <div>
-              <span className="text-muted-foreground font-semibold">CPF (LGPD):</span>
+              <span className="text-muted-foreground font-semibold">CPF:</span>
               <p className="text-sm font-mono text-foreground mt-0.5">
                 {formatarCpf(aluno.cpf, usuario?.perfil !== "ADMIN" && usuario?.perfil !== "SECRETARIO")}
               </p>

@@ -88,6 +88,10 @@ public class AuthService {
 
         Usuario usuario = usuarios.findComPerfilById(id)
                 .orElseThrow(() -> ApiException.naoAutenticado("Usuário não encontrado."));
+        if (usuario.getPerfil().getNome().equals("LEITOR") && usuario.getEscola() != null) {
+            throw ApiException.proibido(
+                    "Leitores vinculados a uma escola não podem alterar a senha. Procure a administração.");
+        }
         if (SenhaPolitica.excedeLimite(req.senhaAtual()) || !encoder.matches(req.senhaAtual(), usuario.getSenhaHash())) {
             limiter.registrarFalha(origem, conta);
             throw ApiException.regraDeNegocio("Senha atual incorreta.");

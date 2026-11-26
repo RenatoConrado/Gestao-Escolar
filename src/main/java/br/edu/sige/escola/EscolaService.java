@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.sige.common.ApiException;
+import br.edu.sige.auditoria.AcaoAuditoria;
+import br.edu.sige.auditoria.AuditoriaService;
 import br.edu.sige.professor.Professor;
 import br.edu.sige.professor.ProfessorRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ public class EscolaService {
 
     private final EscolaRepository escolas;
     private final ProfessorRepository professores;
+    private final AuditoriaService auditoria;
 
     public Page<EscolaResponse> listar(Pageable pageable) {
         return escolas.findAll(pageable).map(EscolaResponse::from);
@@ -35,7 +38,10 @@ public class EscolaService {
         }
         Escola e = new Escola();
         aplicar(e, req);
-        return EscolaResponse.from(escolas.save(e));
+        Escola salva = escolas.save(e);
+        auditoria.registrar("ESCOLA", salva.getId(), AcaoAuditoria.CRIACAO,
+                "escola=" + salva.getNome() + ", código INEP=" + salva.getCodigo());
+        return EscolaResponse.from(salva);
     }
 
     @Transactional
@@ -45,14 +51,20 @@ public class EscolaService {
         if (escolas.existsByCodigoAndIdNot(req.codigo().trim(), id)) {
             throw ApiException.conflito("Já existe uma escola com este código.");
         }
+        String nomeAnterior = e.getNome();
         aplicar(e, req);
+        auditoria.registrar("ESCOLA", id, AcaoAuditoria.ATUALIZACAO,
+                "escola=" + nomeAnterior + " atualizada para " + e.getNome());
         return EscolaResponse.from(e);
     }
 
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void excluir(Long id) {
-        escolas.delete(obter(id));
+        Escola e = obter(id);
+        auditoria.registrar("ESCOLA", id, AcaoAuditoria.EXCLUSAO,
+                "escola=" + e.getNome() + ", código INEP=" + e.getCodigo());
+        escolas.delete(e);
         escolas.flush();
     }
 

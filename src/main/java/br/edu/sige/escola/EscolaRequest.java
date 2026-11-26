@@ -3,13 +3,15 @@ package br.edu.sige.escola;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 /** {@code diretorId} só pode ser definido na atualização (o professor precisa pertencer à escola). */
 public record EscolaRequest(
         @NotBlank @Size(max = 150) String nome,
-        @NotBlank @Size(max = 30) String codigo,
+        @NotBlank @Pattern(regexp = "\\d{8}", message = "Código INEP deve conter exatamente 8 dígitos") String codigo,
         @Size(max = 255) String endereco,
-        @Size(max = 20) String telefone,
+        @Size(max = 20) @Pattern(regexp = "^$|(?:\\+?55\\s?)?\\(?\\d{2}\\)?[\\s.-]?\\d{4,5}[-.\\s]?\\d{4}",
+                message = "Telefone inválido. Use (DD) 00000-0000") String telefone,
         @Email @Size(max = 150) String email,
         Long diretorId) {
 }

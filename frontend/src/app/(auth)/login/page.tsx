@@ -102,9 +102,6 @@ function LoginForm() {
         <Card className="border-border/80 shadow-lg">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-xl">LOGIN</CardTitle>
-            <CardDescription>
-              Informe seu e-mail institucional
-            </CardDescription>
           </CardHeader>
           <CardContent>
             {restoreError && (
@@ -180,11 +177,6 @@ function LoginForm() {
           </CardContent>
         </Card>
 
-        {/* Rodapé Informativo */}
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <ShieldCheck className="h-4 w-4 text-emerald-600" />
-          <span>Rede Local Segura • Servidor Orange Pi</span>
-        </div>
       </div>
     </div>
   );

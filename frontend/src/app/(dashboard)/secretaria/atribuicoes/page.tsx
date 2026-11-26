@@ -240,10 +240,10 @@ function AtribuicoesContent() {
         </div>
 
         {(usuario?.perfil === "ADMIN" || usuario?.perfil === "SECRETARIO") && (
-          <Button onClick={() => setModalNova(true)} className="gap-2 font-semibold shadow-sm">
+          <Link href={`/secretaria/atribuicoes/nova${filtroProfessorId ? `?professorId=${filtroProfessorId}` : ""}`}><Button className="gap-2 font-semibold shadow-sm">
             <Plus className="h-4 w-4" />
             Nova Atribuição
-          </Button>
+          </Button></Link>
         )}
       </div>
 

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiRequest, apiRequestAllPages } from "@/lib/api";
+import { formatarCpfEntrada, formatarTelefoneEntrada } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 import {
   Plus,
@@ -193,10 +194,10 @@ export default function ProfessoresPage() {
             </Button>
           </Link>
           {(usuario?.perfil === "ADMIN" || usuario?.perfil === "SECRETARIO") && (
-            <Button onClick={() => setModalNovo(true)} className="gap-2 font-semibold shadow-sm">
+            <Link href="/secretaria/professores/novo"><Button className="gap-2 font-semibold shadow-sm">
               <Plus className="h-4 w-4" />
               Novo Professor
-            </Button>
+            </Button></Link>
           )}
         </div>
       </div>
@@ -312,6 +313,9 @@ export default function ProfessoresPage() {
                     <Input
                       value={matricula}
                       onChange={(e) => setMatricula(e.target.value)}
+                      maxLength={30}
+                      pattern="[A-Za-z0-9./-]{1,30}"
+                      title="Use letras, números, ponto, barra ou hífen (até 30 caracteres)."
                       required
                     />
                   </div>
@@ -320,8 +324,9 @@ export default function ProfessoresPage() {
                     <label className="font-semibold text-foreground">CPF (11 dígitos) *</label>
                     <Input
                       value={cpf}
-                      onChange={(e) => setCpf(e.target.value)}
+                      onChange={(e) => setCpf(formatarCpfEntrada(e.target.value))}
                       maxLength={14}
+                      inputMode="numeric"
                       required
                     />
                   </div>
@@ -385,7 +390,10 @@ export default function ProfessoresPage() {
                     <label className="font-semibold text-foreground">Telefone / WhatsApp</label>
                     <Input
                       value={telefone}
-                      onChange={(e) => setTelefone(e.target.value)}
+                      onChange={(e) => setTelefone(formatarTelefoneEntrada(e.target.value))}
+                      type="tel"
+                      maxLength={15}
+                      placeholder="(00) 00000-0000"
                     />
                   </div>
                 </div>

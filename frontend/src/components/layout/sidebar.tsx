@@ -19,6 +19,8 @@ import {
   FolderKanban,
   KeyRound,
   Award,
+  MessageSquareText,
+  ArrowLeftRight,
 } from "lucide-react";
 
 export interface NavItem {
@@ -111,6 +113,18 @@ export const navItems: NavItem[] = [
     icon: ShieldAlert,
     roles: ["ADMIN"],
   },
+  {
+    title: "Transferências",
+    href: "/secretaria/transferencias",
+    icon: ArrowLeftRight,
+    roles: ["ADMIN", "SECRETARIO"],
+  },
+  {
+    title: "Contatos da Escola",
+    href: "/contatos",
+    icon: MessageSquareText,
+    roles: ["ADMIN", "SECRETARIO", "PROFESSOR", "LEITOR"],
+  },
   // Relatórios
   {
     title: "Relatórios e Impressão",
@@ -134,7 +148,8 @@ export function Sidebar() {
   if (!usuario) return null;
 
   const itensFiltrados = navItems.filter((item) =>
-    item.roles.includes(usuario.perfil)
+    item.roles.includes(usuario.perfil) &&
+    !(item.href === "/perfil/senha" && usuario.perfil === "LEITOR" && usuario.escolaId != null)
   );
 
   return (

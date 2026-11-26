@@ -39,3 +39,20 @@ export function formatarTelefone(telefone?: string): string {
   }
   return telefone;
 }
+
+export function formatarTelefoneEntrada(telefone: string): string {
+  const digitos = telefone.replace(/\D/g, "").slice(0, 11);
+  if (digitos.length <= 2) return digitos ? `(${digitos}` : "";
+  const ddd = digitos.slice(0, 2);
+  const restante = digitos.slice(2);
+  const tamanhoInicial = digitos.length > 10 ? 5 : 4;
+  return `(${ddd}) ${restante.slice(0, tamanhoInicial)}${restante.length > tamanhoInicial ? `-${restante.slice(tamanhoInicial)}` : ""}`;
+}
+
+export function formatarCpfEntrada(cpf: string): string {
+  const digitos = cpf.replace(/\D/g, "").slice(0, 11);
+  if (digitos.length <= 3) return digitos;
+  if (digitos.length <= 6) return `${digitos.slice(0, 3)}.${digitos.slice(3)}`;
+  if (digitos.length <= 9) return `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6)}`;
+  return `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9)}`;
+}

@@ -31,6 +31,9 @@ public class EventoAuditoria {
     @Column(name = "usuario_id", updatable = false)
     private Long usuarioId;
 
+    @Column(name = "usuario_nome", length = 150, updatable = false)
+    private String usuarioNome;
+
     @Column(length = 20, updatable = false)
     private String perfil;
 
@@ -47,10 +50,11 @@ public class EventoAuditoria {
     @Column(length = 500, updatable = false)
     private String detalhes;
 
-    public EventoAuditoria(Instant em, Long usuarioId, String perfil, String entidade, Long entidadeId,
+    public EventoAuditoria(Instant em, Long usuarioId, String usuarioNome, String perfil, String entidade, Long entidadeId,
                            AcaoAuditoria acao, String detalhes) {
         this.em = em;
         this.usuarioId = usuarioId;
+        this.usuarioNome = usuarioNome;
         this.perfil = perfil;
         this.entidade = entidade;
         this.entidadeId = entidadeId;

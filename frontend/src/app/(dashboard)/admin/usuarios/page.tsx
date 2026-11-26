@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +17,7 @@ import {
   PowerOff,
   Power,
   Shield,
-  School,
-  X,
   CheckCircle2,
-  Mail,
 } from "lucide-react";
 
 interface UsuarioItem {
@@ -40,15 +38,6 @@ export default function UsuariosPage() {
   const [busca, setBusca] = useState("");
   const [filtroPerfil, setFiltroPerfil] = useState<string>("TODOS");
 
-  // Modal Novo Usuário
-  const [modalNovo, setModalNovo] = useState(false);
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("trocar-123");
-  const [perfil, setPerfil] = useState<PerfilRole>("PROFESSOR");
-  const [escolasDisponiveis, setEscolasDisponiveis] = useState<{ id: number; nome: string }[]>([]);
-  const [escolaId, setEscolaId] = useState("");
-  const [salvando, setSalvando] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -60,8 +49,6 @@ export default function UsuariosPage() {
           apiRequestAllPages<any>("/escolas"),
         ]);
         const listaEscolas = escolasData;
-        setEscolasDisponiveis(listaEscolas);
-        if (listaEscolas.length > 0) setEscolaId(String(listaEscolas[0].id));
 
         const mapaEscolas = new Map<number, string>();
         listaEscolas.forEach((e) => mapaEscolas.set(e.id, e.nome));
@@ -89,6 +76,7 @@ export default function UsuariosPage() {
     const user = usuarios.find((u) => u.id === id);
     if (!user) return;
     const novoStatus = !user.ativo;
+    if (!window.confirm(`Certeza de que quer ${novoStatus ? "ativar" : "inativar"} o perfil de ${user.nome}?`)) return;
 
     setErro(null);
     try {
@@ -111,6 +99,8 @@ export default function UsuariosPage() {
   };
 
   const redefinirSenhaAdmin = async (u: UsuarioItem) => {
+    if (!window.confirm(`Certeza de que quer resetar a senha de ${u.nome}? Uma senha temporária será gerada.`)) return;
+    const senhaTemporaria = `${crypto.randomUUID()}Aa1!`;
     setErro(null);
     try {
       await apiRequest(`/usuarios/${u.id}`, {
@@ -118,60 +108,18 @@ export default function UsuariosPage() {
         body: JSON.stringify({
           nome: u.nome,
           email: u.email,
-          senha: "trocar-123",
+          senha: senhaTemporaria,
           perfil: u.perfil,
           escolaId: u.escolaId,
           ativo: u.ativo,
         }),
       });
-      setSucessoMsg(`Senha provisória de ${u.nome} redefinida. Sessões anteriores foram invalidadas.`);
+      setSucessoMsg(`Senha provisória de ${u.nome}: ${senhaTemporaria}. As sessões anteriores foram invalidadas.`);
+      window.alert(`Senha temporária de ${u.nome}: ${senhaTemporaria}\nCopie e entregue por um canal institucional seguro.`);
     } catch (err) {
       setErro(err instanceof ApiError ? err.message : "Não foi possível redefinir a senha.");
     }
     setTimeout(() => setSucessoMsg(null), 5000);
-  };
-
-  const handleSalvarNovo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSalvando(true);
-    setErro(null);
-
-    const escNome = escolasDisponiveis.find((e) => String(e.id) === escolaId)?.nome;
-    const escolaSelecionada =
-      perfil === "SECRETARIO" || perfil === "PROFESSOR"
-        ? Number(escolaId)
-        : perfil === "LEITOR" && escolaId
-        ? Number(escolaId)
-        : null;
-    const novoPayload = {
-      nome,
-      email,
-      senha,
-      perfil,
-      escolaId: escolaSelecionada,
-      ativo: true,
-    };
-
-    try {
-      const criado = await apiRequest<UsuarioItem & { escolaId?: number | null }>("/usuarios", {
-        method: "POST",
-        body: JSON.stringify(novoPayload),
-      });
-      const novoItem: UsuarioItem = {
-        ...criado,
-        escolaNome: criado.escolaId ? escNome : undefined,
-      };
-      setUsuarios((prev) => [novoItem, ...prev]);
-      setModalNovo(false);
-      setNome("");
-      setEmail("");
-      setSucessoMsg(`Usuário ${novoItem.email} criado com sucesso com perfil ${novoItem.perfil}!`);
-      setTimeout(() => setSucessoMsg(null), 4000);
-    } catch (err) {
-      setErro(err instanceof ApiError ? err.message : "Não foi possível cadastrar o usuário.");
-    } finally {
-      setSalvando(false);
-    }
   };
 
   const filtrados = usuarios.filter((u) => {
@@ -192,10 +140,10 @@ export default function UsuariosPage() {
         </div>
 
         {usuario?.perfil === "ADMIN" && (
-          <Button onClick={() => setModalNovo(true)} className="gap-2 font-semibold shadow-sm">
+          <Link href="/admin/usuarios/novo"><Button className="gap-2 font-semibold shadow-sm">
             <Plus className="h-4 w-4" />
             Novo Usuário
-          </Button>
+          </Button></Link>
         )}
       </div>
 
@@ -290,6 +238,7 @@ export default function UsuariosPage() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3.5 text-right space-x-2">
+                    <Link href={`/admin/usuarios/novo?id=${u.id}`}><Button variant="outline" size="sm" className="text-xs">Editar</Button></Link>
                     <Button
                       variant="outline"
                       size="sm"
@@ -327,98 +276,6 @@ export default function UsuariosPage() {
         </div>
       </Card>
 
-      {/* Modal Novo Usuário */}
-      {modalNovo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in-20">
-          <Card className="w-full max-w-md shadow-2xl">
-            <CardHeader className="flex flex-row items-center justify-between border-b p-4">
-              <CardTitle className="text-base font-bold">Cadastrar Novo Usuário</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setModalNovo(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <form onSubmit={handleSalvarNovo}>
-              <CardContent className="p-4 space-y-4 text-xs">
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Nome Completo *</label>
-                  <Input
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">E-mail Institucional *</label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Perfil de Acesso *</label>
-                  <select
-                    value={perfil}
-                    onChange={(e: any) => setPerfil(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="PROFESSOR">PROFESSOR</option>
-                    <option value="SECRETARIO">SECRETARIO</option>
-                    <option value="ADMIN">ADMIN</option>
-                    <option value="LEITOR">LEITOR</option>
-                  </select>
-                </div>
-
-                {(perfil === "SECRETARIO" || perfil === "PROFESSOR" || perfil === "LEITOR") && (
-                  <div className="space-y-1.5">
-                    <label className="font-semibold text-foreground">
-                      {perfil === "LEITOR" ? "Escola Vinculada (opcional para escopo local)" : "Escola Vinculada *"}
-                    </label>
-                    <select
-                      value={escolaId}
-                      onChange={(e) => setEscolaId(e.target.value)}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                    >
-                      {perfil === "LEITOR" && (
-                        <option value="">Rede Geral (Sem escola fixa)</option>
-                      )}
-                      {escolasDisponiveis.map((esc) => (
-                          <option key={esc.id} value={esc.id}>
-                            {esc.nome}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Senha Provisória</label>
-                  <Input
-                    type="password"
-                    value={senha}
-                    onChange={(e) => setSenha(e.target.value)}
-                    required
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    O usuário deverá alterá-la no primeiro acesso em Alterar Senha.
-                  </p>
-                </div>
-              </CardContent>
-              <div className="p-4 border-t flex justify-end gap-2">
-                <Button variant="outline" type="button" onClick={() => setModalNovo(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" isLoading={salvando} disabled={salvando || ((perfil === "SECRETARIO" || perfil === "PROFESSOR") && !escolaId)} className="font-semibold">
-                  Cadastrar Acesso
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }

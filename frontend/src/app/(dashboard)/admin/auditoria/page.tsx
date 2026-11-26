@@ -10,7 +10,8 @@ import { History, RefreshCw } from "lucide-react";
 interface EventoAuditoriaItem {
   id: number;
   em: string;
-  usuario: string;
+  usuarioId: number;
+  usuarioNome?: string;
   perfil: string;
   entidade: string;
   entidadeId?: number | null;
@@ -22,17 +23,23 @@ export default function AuditoriaPage() {
   const [eventos, setEventos] = useState<EventoAuditoriaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [perfil, setPerfil] = useState("");
+  const [de, setDe] = useState("");
+  const [ate, setAte] = useState("");
 
   const carregarAuditoria = async () => {
     setLoading(true);
     setErro(null);
     try {
-      const lista = await apiRequestAllPages<any>("/auditoria");
+      const lista = await apiRequestAllPages<any>("/auditoria", {
+        params: { perfil: perfil || undefined, de: de || undefined, ate: ate || undefined },
+      });
       setEventos(
           lista.map((ev) => ({
             id: ev.id,
-            em: ev.em ? new Date(ev.em).toLocaleString("pt-BR") : "",
-            usuario: `Usuário #${ev.usuarioId}`,
+            em: ev.em || "",
+            usuarioId: ev.usuarioId,
+            usuarioNome: ev.usuarioNome,
             perfil: ev.perfil,
             entidade: ev.entidade,
             entidadeId: ev.entidadeId,
@@ -59,6 +66,7 @@ export default function AuditoriaPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Trilha de Auditoria e Conformidade
           </h1>
+          <p className="text-sm text-muted-foreground">Eventos de todos os perfis, com identificação de quem realizou cada ação.</p>
         </div>
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex items-center gap-2">
@@ -67,6 +75,28 @@ export default function AuditoriaPage() {
           </Button>
         </div>
       </div>
+
+      <Card className="p-4">
+        <div className="grid gap-3 sm:grid-cols-4 sm:items-end">
+          <label className="space-y-1 text-xs font-medium">
+            Perfil responsável
+            <select value={perfil} onChange={(e) => setPerfil(e.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+              <option value="">Todos os perfis</option>
+              {["ADMIN", "SECRETARIO", "PROFESSOR", "LEITOR"].map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <label className="space-y-1 text-xs font-medium">De
+            <input type="date" value={de} onChange={(e) => setDe(e.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+          </label>
+          <label className="space-y-1 text-xs font-medium">Até
+            <input type="date" value={ate} onChange={(e) => setAte(e.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+          </label>
+          <Button onClick={carregarAuditoria} className="gap-1.5">Aplicar filtros</Button>
+        </div>
+      </Card>
 
       <Card className="shadow-sm overflow-hidden">
         <div className="table-scroll">
@@ -84,10 +114,10 @@ export default function AuditoriaPage() {
               {eventos.map((evento) => (
                 <tr key={evento.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                    {evento.em}
+                    {evento.em ? new Date(evento.em).toLocaleString("pt-BR") : ""}
                   </td>
                   <td className="px-4 py-3.5 font-medium text-foreground">
-                    <div>{evento.usuario}</div>
+                    <div>{evento.usuarioNome || `Usuário #${evento.usuarioId}`}</div>
                     <span className="text-[10px] text-muted-foreground uppercase">{evento.perfil}</span>
                   </td>
                   <td className="px-4 py-3.5">

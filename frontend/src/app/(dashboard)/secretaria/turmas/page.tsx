@@ -231,10 +231,10 @@ export default function TurmasPage() {
         </div>
 
         {(usuario?.perfil === "ADMIN" || usuario?.perfil === "SECRETARIO") && (
-          <Button onClick={() => setModalNovaTurma(true)} className="gap-2 font-semibold shadow-sm">
+          <Link href="/secretaria/turmas/nova"><Button className="gap-2 font-semibold shadow-sm">
             <Plus className="h-4 w-4" />
             Nova Turma
-          </Button>
+          </Button></Link>
         )}
       </div>
 

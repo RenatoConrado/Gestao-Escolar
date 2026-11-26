@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,5 +14,6 @@ public record AvaliacaoRequest(
         @NotNull Long atribuicaoId,
         @NotBlank @Size(max = 150) String nome,
         @NotNull LocalDate data,
-        @NotNull @DecimalMin(value = "0.01") @Digits(integer = 3, fraction = 2) BigDecimal valorMaximo) {
+        @NotNull @DecimalMin(value = "0.01") @DecimalMax("10.00")
+        @Digits(integer = 3, fraction = 2) BigDecimal valorMaximo) {
 }

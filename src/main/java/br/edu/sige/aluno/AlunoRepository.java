@@ -15,7 +15,9 @@ public interface AlunoRepository extends JpaRepository<Aluno, Long> {
             where (cast(:nome as string) is null
                    or lower(a.nome) like lower(concat('%', cast(:nome as string), '%')))
               and (
-                  exists (select 1 from Matricula m where m.aluno = a and m.turma.escola.id = :escolaId)
+                  exists (select 1 from Matricula m where m.aluno = a
+                          and m.situacao = br.edu.sige.matricula.SituacaoMatricula.ATIVA
+                          and m.turma.escola.id = :escolaId)
                   or (
                       not exists (select 1 from Matricula m where m.aluno = a)
                       and exists (select 1 from Usuario u where u.id = a.criadoPor and u.escola.id = :escolaId)
@@ -46,7 +48,9 @@ public interface AlunoRepository extends JpaRepository<Aluno, Long> {
             select case when count(a) > 0 then true else false end from Aluno a
             where a.id = :alunoId
               and (
-                  exists (select 1 from Matricula m where m.aluno = a and m.turma.escola.id = :escolaId)
+                  exists (select 1 from Matricula m where m.aluno = a
+                          and m.situacao = br.edu.sige.matricula.SituacaoMatricula.ATIVA
+                          and m.turma.escola.id = :escolaId)
                   or (
                       not exists (select 1 from Matricula m where m.aluno = a)
                       and exists (select 1 from Usuario u where u.id = a.criadoPor and u.escola.id = :escolaId)

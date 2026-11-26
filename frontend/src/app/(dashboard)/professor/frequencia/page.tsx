@@ -29,6 +29,7 @@ interface LinhaAlunoChamada {
   nome: string;
   presente: boolean;
   justificativa: string;
+  registrada: boolean;
 }
 
 function FrequenciaContent() {
@@ -109,6 +110,7 @@ function FrequenciaContent() {
             nome: aluno.nome,
             presente: salvo ? salvo.presente : true, // Padrão: presente
             justificativa: salvo?.observacao || "",
+            registrada: !!salvo,
           };
         });
 
@@ -129,7 +131,7 @@ function FrequenciaContent() {
     setListaAlunos((prev) =>
       prev.map((item) => ({
         ...item,
-        presente: true,
+        presente: item.registrada ? item.presente : true,
       }))
     );
   };
@@ -180,6 +182,7 @@ function FrequenciaContent() {
         body: JSON.stringify(payload),
       });
 
+      setListaAlunos((prev) => prev.map((item) => ({ ...item, registrada: true })));
       setSucesso(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -206,7 +209,7 @@ function FrequenciaContent() {
             FREQUÊNCIA
           </h1>
           <p className="text-xs text-muted-foreground">
-            {turmaIdSelecionada ? `Diário de classe eletrônico da turma #${turmaIdSelecionada}` : "Selecione uma turma para fazer a chamada."}
+            {turmaIdSelecionada ? `turma #${turmaIdSelecionada}` : "Selecione uma turma para fazer a chamada."}
           </p>
         </div>
       </div>
@@ -302,9 +305,6 @@ function FrequenciaContent() {
             <CardTitle className="text-sm uppercase tracking-wider font-bold text-muted-foreground">
               Lista de Alunos ({listaAlunos.length})
             </CardTitle>
-            <span className="text-xs text-muted-foreground">
-              Toque no switch para alternar Presença / Falta
-            </span>
           </div>
         </CardHeader>
         <CardContent className="p-0 divide-y">
@@ -324,6 +324,7 @@ function FrequenciaContent() {
                   type="button"
                   aria-label={`Presença de ${aluno.nome}: ${aluno.presente ? "Presente" : "Falta"}`}
                   onClick={() => togglePresenca(aluno.alunoId)}
+                  disabled={aluno.registrada}
                   className={`h-12 w-12 rounded-xl flex items-center justify-center font-bold text-white shadow-sm transition-transform active:scale-90 select-none ${
                     aluno.presente
                       ? "bg-emerald-600 hover:bg-emerald-700"
@@ -350,11 +351,18 @@ function FrequenciaContent() {
 
               {/* Campo Justificativa (Opcional) */}
               <div className="w-full sm:w-64">
+                <label htmlFor={`justificativa-${aluno.alunoId}`} className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                  Justificativa
+                </label>
                 <Input
+                  id={`justificativa-${aluno.alunoId}`}
                   type="text"
                   aria-label={`Justificativa de ${aluno.nome}`}
                   value={aluno.justificativa}
                   onChange={(e) => alterarJustificativa(aluno.alunoId, e.target.value)}
+                  maxLength={255}
+                  placeholder="Ex: atestado"
+                  disabled={aluno.registrada}
                   className="h-10 text-xs bg-background/80"
                 />
               </div>
@@ -367,7 +375,7 @@ function FrequenciaContent() {
       <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-30 bg-background/95 border-t p-4 backdrop-blur-md shadow-2xl flex justify-center">
         <div className="w-full max-w-4xl flex items-center justify-between gap-4">
           <div className="hidden sm:block text-xs text-muted-foreground">
-            Lote atômico de {listaAlunos.length} registros para {dataSelecionada}
+            {listaAlunos.length} registros para {dataSelecionada}
           </div>
           <Button
             onClick={salvarChamada}

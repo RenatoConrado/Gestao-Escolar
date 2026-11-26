@@ -28,8 +28,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Leitura: todos os perfis (dentro do escopo). POST/DELETE: ADMIN e PROFESSOR (somente suas turmas).
- * PUT: também SECRETARIO, como alteração excepcional na sua escola. LEITOR nunca escreve.
+ * Leitura: todos os perfis (dentro do escopo). PROFESSOR registra a chamada; apenas ADMIN/SECRETARIO podem corrigi-la.
  */
 @Tag(name = "Frequências")
 @RestController
@@ -62,13 +61,13 @@ public class FrequenciaController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO','PROFESSOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO')")
     public FrequenciaResponse atualizar(@PathVariable Long id, @Valid @RequestBody FrequenciaUpdateRequest req) {
         return service.atualizar(id, req);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','PROFESSOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
