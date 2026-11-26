@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatarCpf, hojeLocalISO } from "./utils";
+import { formatarCpf, formatarCpfEntrada, formatarTelefoneEntrada, hojeLocalISO } from "./utils";
 
 describe("hojeLocalISO", () => {
   it("formats local date as YYYY-MM-DD without UTC shift", () => {
@@ -16,5 +16,13 @@ describe("formatarCpf", () => {
     expect(formatarCpf("***.456.***-**", true)).toBe("***.456.***-**");
     expect(formatarCpf(null)).toBe("—");
     expect(formatarCpf(undefined)).toBe("—");
+  });
+
+  describe("formatadores de entrada", () => {
+    it("padroniza CPF e telefone com limite de dígitos", () => {
+      expect(formatarCpfEntrada("123456789001")).toBe("123.456.789-00");
+      expect(formatarTelefoneEntrada("11987654321")).toBe("(11) 98765-4321");
+      expect(formatarTelefoneEntrada("1133334444")).toBe("(11) 3333-4444");
+    });
   });
 });

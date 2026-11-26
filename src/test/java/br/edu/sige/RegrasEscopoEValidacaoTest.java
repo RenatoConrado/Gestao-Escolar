@@ -94,7 +94,7 @@ class RegrasEscopoEValidacaoTest {
     void b2_alunoServiceRespeitaEscopoDeEscolaEProfessor() {
         AlunoRepository alunos = mock(AlunoRepository.class);
         AcessoService acesso = mock(AcessoService.class);
-        AlunoService service = new AlunoService(alunos, acesso);
+        AlunoService service = new AlunoService(alunos, acesso, mock(AuditoriaService.class));
 
         Aluno a = new Aluno();
         ReflectionTestUtils.setField(a, "id", 50L);
@@ -226,4 +226,3 @@ class RegrasEscopoEValidacaoTest {
                         ex -> assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY));
     }
 }
-

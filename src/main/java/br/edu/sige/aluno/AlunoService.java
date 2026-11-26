@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.sige.acesso.AcessoService;
+import br.edu.sige.auditoria.AcaoAuditoria;
+import br.edu.sige.auditoria.AuditoriaService;
 import br.edu.sige.common.ApiException;
 import br.edu.sige.security.PerfilNome;
 import br.edu.sige.security.UsuarioAutenticado;
@@ -19,6 +21,7 @@ public class AlunoService {
 
     private final AlunoRepository alunos;
     private final AcessoService acesso;
+    private final AuditoriaService auditoria;
 
     public Page<AlunoResponse> listar(String nome, Pageable pageable) {
         UsuarioAutenticado u = acesso.usuario();
@@ -62,7 +65,10 @@ public class AlunoService {
         }
         Aluno a = new Aluno();
         aplicar(a, req);
-        return AlunoResponse.from(alunos.save(a), true);
+        Aluno salvo = alunos.save(a);
+        auditoria.registrar("ALUNO", salvo.getId(), AcaoAuditoria.CRIACAO,
+                "aluno=" + salvo.getNome() + ", matrícula=" + salvo.getMatricula());
+        return AlunoResponse.from(salvo, true);
     }
 
     @Transactional
@@ -76,7 +82,12 @@ public class AlunoService {
         if (req.cpf() != null && alunos.existsByCpfAndIdNot(req.cpf(), id)) {
             throw ApiException.conflito("Já existe um aluno com este CPF.");
         }
+        String nomeAnterior = a.getNome();
+        String matriculaAnterior = a.getMatricula();
         aplicar(a, req);
+        auditoria.registrar("ALUNO", id, AcaoAuditoria.ATUALIZACAO,
+                "aluno=" + nomeAnterior + " (matrícula " + matriculaAnterior + ") atualizado para "
+                        + a.getNome() + " (matrícula " + a.getMatricula() + ")");
         return AlunoResponse.from(a, true);
     }
 
@@ -85,6 +96,8 @@ public class AlunoService {
     public void excluir(Long id) {
         Aluno a = obter(id);
         exigirAcessoAoAluno(a);
+        auditoria.registrar("ALUNO", id, AcaoAuditoria.EXCLUSAO,
+                "aluno=" + a.getNome() + ", matrícula=" + a.getMatricula());
         alunos.delete(a);
         alunos.flush();
     }

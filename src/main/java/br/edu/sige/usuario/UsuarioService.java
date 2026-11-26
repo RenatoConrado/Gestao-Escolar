@@ -68,7 +68,7 @@ public class UsuarioService {
         aplicar(u, req, email);
         Usuario salvo = usuarios.save(u);
         auditoria.registrar("USUARIO", salvo.getId(), AcaoAuditoria.CRIACAO,
-                "email=" + email + ", perfil=" + req.perfil());
+                "usuário=" + salvo.getNome() + ", email=" + email + ", perfil=" + req.perfil());
         return UsuarioResponse.from(salvo);
     }
 
@@ -91,6 +91,8 @@ public class UsuarioService {
         String perfilAntes = u.getPerfil().getNome();
         Long escolaAntes = idEscola(u);
         boolean ativoAntes = u.isAtivo();
+        String nomeAntes = u.getNome();
+        String emailAntes = u.getEmail();
 
         boolean senhaRedefinida = req.senha() != null && !req.senha().isBlank();
         if (senhaRedefinida) {
@@ -106,6 +108,12 @@ public class UsuarioService {
         if (ativoAntes != u.isAtivo()) {
             mudancas.add("ativo: " + ativoAntes + " -> " + u.isAtivo());
         }
+        if (!nomeAntes.equals(u.getNome())) {
+            mudancas.add("nome: " + nomeAntes + " -> " + u.getNome());
+        }
+        if (!emailAntes.equals(u.getEmail())) {
+            mudancas.add("e-mail: " + emailAntes + " -> " + u.getEmail());
+        }
         if (!perfilAntes.equals(u.getPerfil().getNome())) {
             mudancas.add("perfil: " + perfilAntes + " -> " + u.getPerfil().getNome());
         }
@@ -116,7 +124,8 @@ public class UsuarioService {
             u.revogarTokens();
         }
         auditoria.registrar("USUARIO", id, AcaoAuditoria.ATUALIZACAO,
-                mudancas.isEmpty() ? "dados cadastrais" : String.join("; ", mudancas));
+                "usuário=" + nomeAntes + " (" + emailAntes + "); "
+                        + (mudancas.isEmpty() ? "dados cadastrais" : String.join("; ", mudancas)));
         return UsuarioResponse.from(u);
     }
 
@@ -127,7 +136,8 @@ public class UsuarioService {
             throw ApiException.regraDeNegocio("Você não pode excluir o seu próprio usuário.");
         }
         Usuario u = obter(id);
-        auditoria.registrar("USUARIO", id, AcaoAuditoria.EXCLUSAO, "email=" + u.getEmail());
+        auditoria.registrar("USUARIO", id, AcaoAuditoria.EXCLUSAO,
+                "usuário=" + u.getNome() + ", email=" + u.getEmail() + ", perfil=" + u.getPerfil().getNome());
         usuarios.delete(u);
         usuarios.flush();   // força a verificação de vínculos (FK) aqui, devolvendo 409 em vez de falhar no commit
     }

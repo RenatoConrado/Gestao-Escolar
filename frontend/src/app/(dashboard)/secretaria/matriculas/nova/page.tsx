@@ -9,14 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiRequest, apiRequestAllPages, ApiError } from "@/lib/api";
 import { hojeLocalISO } from "@/lib/utils";
+import { useSessionDraft } from "@/lib/use-session-draft";
 import { ArrowLeft, Save, AlertCircle, Info } from "lucide-react";
 
 export default function NovaMatriculaPage() {
   const router = useRouter();
 
-  const [alunoId, setAlunoId] = useState("");
-  const [turmaId, setTurmaId] = useState("");
-  const [dataMatricula, setDataMatricula] = useState(hojeLocalISO());
+  const [form, setForm, clearDraft, ready, hasDraft] = useSessionDraft("matricula-form-nova", {
+    alunoId: "", turmaId: "", dataMatricula: hojeLocalISO(),
+  });
 
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -27,6 +28,7 @@ export default function NovaMatriculaPage() {
   const [carregandoOpcoes, setCarregandoOpcoes] = useState(true);
 
   React.useEffect(() => {
+    if (!ready) return;
     async function carregarOpcoes() {
       try {
         const [alunos, turmas] = await Promise.all([
@@ -37,8 +39,11 @@ export default function NovaMatriculaPage() {
         const turmasOptions = turmas.map((t) => ({ id: t.id, nome: `${t.nome} — ${t.serie} (Turno ${t.turno})` }));
         setAlunosDisponiveis(alunosOptions);
         setTurmasDisponiveis(turmasOptions);
-        setAlunoId(alunosOptions[0] ? String(alunosOptions[0].id) : "");
-        setTurmaId(turmasOptions[0] ? String(turmasOptions[0].id) : "");
+        if (!hasDraft) setForm((draft) => ({
+          ...draft,
+          alunoId: alunosOptions[0] ? String(alunosOptions[0].id) : "",
+          turmaId: turmasOptions[0] ? String(turmasOptions[0].id) : "",
+        }));
       } catch (err) {
         setErro(err instanceof Error ? err.message : "Não foi possível carregar alunos e turmas.");
       } finally {
@@ -47,7 +52,7 @@ export default function NovaMatriculaPage() {
     }
 
     carregarOpcoes();
-  }, []);
+  }, [hasDraft, ready, setForm]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,13 +63,14 @@ export default function NovaMatriculaPage() {
       await apiRequest("/matriculas", {
         method: "POST",
         body: JSON.stringify({
-          alunoId: Number(alunoId),
-          turmaId: Number(turmaId),
+          alunoId: Number(form.alunoId),
+          turmaId: Number(form.turmaId),
           situacao: "ATIVA",
-          dataMatricula,
+          dataMatricula: form.dataMatricula,
         }),
       });
 
+      clearDraft();
       router.push("/secretaria/matriculas?sucesso=matriculado");
     } catch (err: any) {
       if (err instanceof ApiError) {
@@ -96,14 +102,6 @@ export default function NovaMatriculaPage() {
         </div>
       </div>
 
-      <Alert variant="warning" className="bg-amber-50 dark:bg-amber-950/30 border-amber-300">
-        <Info className="h-4 w-4 text-amber-700 dark:text-amber-300" />
-        <AlertTitle className="text-amber-900 dark:text-amber-200">Regra de Consistência</AlertTitle>
-        <AlertDescription className="text-amber-800 dark:text-amber-300 text-xs">
-          O sistema garante que cada aluno possui no máximo uma matrícula <strong>ATIVA</strong> por ano letivo em toda a rede municipal.
-        </AlertDescription>
-      </Alert>
-
       {erro && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -121,8 +119,8 @@ export default function NovaMatriculaPage() {
               </label>
               <select
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                value={alunoId}
-                onChange={(e) => setAlunoId(e.target.value)}
+                value={form.alunoId}
+                onChange={(e) => setForm({ ...form, alunoId: e.target.value })}
                 disabled={carregandoOpcoes || alunosDisponiveis.length === 0}
                 required
               >
@@ -140,8 +138,8 @@ export default function NovaMatriculaPage() {
               </label>
               <select
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                value={turmaId}
-                onChange={(e) => setTurmaId(e.target.value)}
+                value={form.turmaId}
+                onChange={(e) => setForm({ ...form, turmaId: e.target.value })}
                 disabled={carregandoOpcoes || turmasDisponiveis.length === 0}
                 required
               >
@@ -159,8 +157,8 @@ export default function NovaMatriculaPage() {
               </label>
               <Input
                 type="date"
-                value={dataMatricula}
-                onChange={(e) => setDataMatricula(e.target.value)}
+                value={form.dataMatricula}
+                onChange={(e) => setForm({ ...form, dataMatricula: e.target.value })}
                 required
               />
             </div>
@@ -172,7 +170,7 @@ export default function NovaMatriculaPage() {
                 Cancelar
               </Button>
             </Link>
-            <Button type="submit" isLoading={loading} disabled={carregandoOpcoes || !alunoId || !turmaId} className="gap-2 font-semibold">
+            <Button type="submit" isLoading={loading} disabled={carregandoOpcoes || !form.alunoId || !form.turmaId} className="gap-2 font-semibold">
               <Save className="h-4 w-4" />
               Efetivar Matrícula
             </Button>

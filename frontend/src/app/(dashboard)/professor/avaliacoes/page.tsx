@@ -181,7 +181,7 @@ function AvaliacoesContent() {
 
     const valorMax = parseFloat(valorMaximoNova.replace(",", "."));
     if (isNaN(valorMax) || valorMax <= 0) {
-      setErro("O valor máximo da avaliação deve ser um número positivo.");
+      setErro("O valor máximo da avaliação deve estar entre 0,01 e 10.");
       setCriando(false);
       return;
     }
@@ -287,10 +287,11 @@ function AvaliacoesContent() {
           </div>
         </div>
 
-        <Button onClick={() => setModalAberta(true)} disabled={!atribuicaoIdSelecionada} className="gap-2 font-semibold">
+        <Link href={`/professor/avaliacoes/nova?atribuicaoId=${atribuicaoIdSelecionada}`} aria-disabled={!atribuicaoIdSelecionada}>
+        <Button disabled={!atribuicaoIdSelecionada} className="gap-2 font-semibold">
           <Plus className="h-4 w-4" />
           Nova Avaliação
-        </Button>
+        </Button></Link>
       </div>
 
       {sucesso && (
@@ -482,7 +483,7 @@ function AvaliacoesContent() {
                     type="number"
                     step="0.5"
                     min="1"
-                    max="100"
+                    max="10"
                     value={valorMaximoNova}
                     onChange={(e) => setValorMaximoNova(e.target.value)}
                     required

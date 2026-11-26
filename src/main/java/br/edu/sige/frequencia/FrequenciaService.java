@@ -115,7 +115,12 @@ public class FrequenciaService {
                 f.setTurma(turma);
                 f.setData(req.data());
                 novos++;
-            } else if (f.isPresente() != item.presente()) {
+            } else if (f.isPresente() != item.presente()
+                    || !java.util.Objects.equals(f.getObservacao(), item.observacao())) {
+                if (acesso.usuario().perfil() == br.edu.sige.security.PerfilNome.PROFESSOR) {
+                    throw ApiException.proibido(
+                            "A chamada já foi registrada. Para corrigir, contate a secretaria da escola ou a administração.");
+                }
                 alterados.add(item.alunoId());
             }
             f.setPresente(item.presente());
@@ -131,21 +136,22 @@ public class FrequenciaService {
 
     /** SECRETARIO pode corrigir (alteração excepcional) apenas na sua escola. */
     @Transactional
-    @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO','PROFESSOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO')")
     public FrequenciaResponse atualizar(Long id, FrequenciaUpdateRequest req) {
         Frequencia f = obter(id);
         acesso.exigirEscritaNaTurma(f.getTurma());
         boolean anterior = f.isPresente();
+        String observacaoAnterior = f.getObservacao();
         f.setPresente(req.presente());
         f.setObservacao(req.observacao());
         auditoria.registrar("FREQUENCIA", id, AcaoAuditoria.ATUALIZACAO,
                 "aluno=" + f.getAluno().getId() + ", data=" + f.getData() + ", presente: " + anterior + " -> "
-                        + req.presente());
+                        + req.presente() + ", justificativa: " + observacaoAnterior + " -> " + req.observacao());
         return FrequenciaResponse.from(f);
     }
 
     @Transactional
-    @PreAuthorize("hasAnyRole('ADMIN','PROFESSOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SECRETARIO')")
     public void excluir(Long id) {
         Frequencia f = obter(id);
         acesso.exigirEscritaNaTurma(f.getTurma());

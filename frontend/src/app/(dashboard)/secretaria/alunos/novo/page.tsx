@@ -8,57 +8,41 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiRequest, ApiError } from "@/lib/api";
+import { formatarCpfEntrada, formatarTelefoneEntrada } from "@/lib/utils";
+import { useSessionDraft } from "@/lib/use-session-draft";
 import { ArrowLeft, Save, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function NovoAlunoPage() {
   const router = useRouter();
-
-  const [nome, setNome] = useState("");
-  const [matricula, setMatricula] = useState("");
-  const [dataNascimento, setDataNascimento] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [responsavel, setResponsavel] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [endereco, setEndereco] = useState("");
+  const [form, setForm, clearDraft] = useSessionDraft("aluno-form-novo", {
+    nome: "", matricula: "", dataNascimento: "", cpf: "", responsavel: "", telefone: "", endereco: "",
+  });
 
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-
-  // Formatação simples de CPF
-  const handleCpfChange = (val: string) => {
-    const limpo = val.replace(/\D/g, "").slice(0, 11);
-    let formatado = limpo;
-    if (limpo.length > 9) {
-      formatado = `${limpo.slice(0, 3)}.${limpo.slice(3, 6)}.${limpo.slice(6, 9)}-${limpo.slice(9)}`;
-    } else if (limpo.length > 6) {
-      formatado = `${limpo.slice(0, 3)}.${limpo.slice(3, 6)}.${limpo.slice(6)}`;
-    } else if (limpo.length > 3) {
-      formatado = `${limpo.slice(0, 3)}.${limpo.slice(3)}`;
-    }
-    setCpf(formatado);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErro(null);
 
-    const cpfLimpo = cpf.replace(/\D/g, "");
+    const cpfLimpo = form.cpf.replace(/\D/g, "");
 
     try {
       await apiRequest("/alunos", {
         method: "POST",
         body: JSON.stringify({
-          nome,
-          matricula,
-          dataNascimento,
+          nome: form.nome,
+          matricula: form.matricula,
+          dataNascimento: form.dataNascimento,
           cpf: cpfLimpo ? cpfLimpo : null,
-          responsavel,
-          telefone,
-          endereco,
+          responsavel: form.responsavel,
+          telefone: form.telefone,
+          endereco: form.endereco,
         }),
       });
 
+      clearDraft();
       router.push("/secretaria/alunos?sucesso=cadastrado");
     } catch (err: any) {
       if (err instanceof ApiError) {
@@ -107,8 +91,8 @@ export default function NovoAlunoPage() {
                   Nome Completo do Aluno *
                 </label>
                 <Input
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
+                  value={form.nome}
+                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
                   required
                 />
               </div>
@@ -118,8 +102,11 @@ export default function NovoAlunoPage() {
                   Matrícula do Aluno *
                 </label>
                 <Input
-                  value={matricula}
-                  onChange={(e) => setMatricula(e.target.value)}
+                  value={form.matricula}
+                  onChange={(e) => setForm({ ...form, matricula: e.target.value })}
+                  maxLength={30}
+                  pattern="[A-Za-z0-9./-]{1,30}"
+                  title="Use letras, números, ponto, barra ou hífen (até 30 caracteres)."
                   required
                 />
               </div>
@@ -130,19 +117,21 @@ export default function NovoAlunoPage() {
                 </label>
                 <Input
                   type="date"
-                  value={dataNascimento}
-                  onChange={(e) => setDataNascimento(e.target.value)}
+                  value={form.dataNascimento}
+                  onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })}
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
-                  CPF do Aluno (Opcional / LGPD)
+                  CPF do Aluno
                 </label>
                 <Input
-                  value={cpf}
-                  onChange={(e) => handleCpfChange(e.target.value)}
+                  value={form.cpf}
+                  onChange={(e) => setForm({ ...form, cpf: formatarCpfEntrada(e.target.value) })}
+                  maxLength={14}
+                  inputMode="numeric"
                 />
               </div>
 
@@ -151,8 +140,11 @@ export default function NovoAlunoPage() {
                   Telefone de Contato
                 </label>
                 <Input
-                  value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
+                  value={form.telefone}
+                  onChange={(e) => setForm({ ...form, telefone: formatarTelefoneEntrada(e.target.value) })}
+                  type="tel"
+                  maxLength={15}
+                  placeholder="(00) 00000-0000"
                 />
               </div>
 
@@ -161,8 +153,8 @@ export default function NovoAlunoPage() {
                   Nome do Responsável Legal
                 </label>
                 <Input
-                  value={responsavel}
-                  onChange={(e) => setResponsavel(e.target.value)}
+                  value={form.responsavel}
+                  onChange={(e) => setForm({ ...form, responsavel: e.target.value })}
                 />
               </div>
 
@@ -171,8 +163,8 @@ export default function NovoAlunoPage() {
                   Endereço Residencial
                 </label>
                 <Input
-                  value={endereco}
-                  onChange={(e) => setEndereco(e.target.value)}
+                  value={form.endereco}
+                  onChange={(e) => setForm({ ...form, endereco: e.target.value })}
                 />
               </div>
             </div>

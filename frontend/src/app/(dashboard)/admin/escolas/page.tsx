@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiRequest, apiRequestAllPages, ApiError } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import { Plus, Phone, Mail, MapPin, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, Phone, Mail, MapPin, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 
 interface EscolaItem {
   id: number;
@@ -17,6 +17,7 @@ interface EscolaItem {
   endereco?: string;
   telefone?: string;
   email?: string;
+  diretorId?: number | null;
   diretorNome?: string;
 }
 
@@ -25,17 +26,9 @@ export default function AdminEscolasPage() {
   const [escolas, setEscolas] = useState<EscolaItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal Nova Escola
-  const [modalNova, setModalNova] = useState(false);
-  const [nome, setNome] = useState("");
-  const [codigo, setCodigo] = useState("");
-  const [endereco, setEndereco] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [email, setEmail] = useState("");
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
   const [sucessoMsg, setSucessoMsg] = useState<string | null>(null);
   const [erroCarga, setErroCarga] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     async function carregarEscolas() {
@@ -51,38 +44,15 @@ export default function AdminEscolasPage() {
     carregarEscolas();
   }, []);
 
-  const handleSalvar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSalvando(true);
+  const excluirEscola = async (escola: EscolaItem) => {
+    if (!window.confirm(`Certeza de que quer excluir a escola ${escola.nome}? Esta ação não pode ser desfeita.`)) return;
     setErro(null);
-
-    const novaPayload = {
-      nome,
-      codigo,
-      endereco: endereco || null,
-      telefone: telefone || null,
-      email: email || null,
-    };
-
     try {
-      const criado = await apiRequest<EscolaItem>("/escolas", {
-        method: "POST",
-        body: JSON.stringify(novaPayload),
-      });
-
-      setEscolas((prev) => [criado, ...prev]);
-      setSucessoMsg(`Escola "${criado.nome}" cadastrada com sucesso!`);
-      setModalNova(false);
-      setNome("");
-      setCodigo("");
-      setEndereco("");
-      setTelefone("");
-      setEmail("");
-      setTimeout(() => setSucessoMsg(null), 4000);
+      await apiRequest(`/escolas/${escola.id}`, { method: "DELETE" });
+      setEscolas((prev) => prev.filter((item) => item.id !== escola.id));
+      setSucessoMsg(`Escola "${escola.nome}" excluída.`);
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : "Não foi possível cadastrar a escola.");
-    } finally {
-      setSalvando(false);
+      setErro(err instanceof ApiError ? err.message : "Não foi possível excluir a escola.");
     }
   };
 
@@ -95,10 +65,9 @@ export default function AdminEscolasPage() {
           </h1>
         </div>
         {usuario?.perfil === "ADMIN" && (
-          <Button onClick={() => setModalNova(true)} className="gap-2 font-semibold shadow-sm">
-            <Plus className="h-4 w-4" />
-            Nova Escola
-          </Button>
+          <Link href="/admin/escolas/novo"><Button className="gap-2 font-semibold shadow-sm">
+            <Plus className="h-4 w-4" />Nova Escola
+          </Button></Link>
         )}
       </div>
 
@@ -110,6 +79,7 @@ export default function AdminEscolasPage() {
         </Alert>
       )}
       {erroCarga && <p role="alert" className="text-sm text-destructive">{erroCarga}</p>}
+      {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {escolas.map((esc) => (
@@ -143,84 +113,21 @@ export default function AdminEscolasPage() {
                   <Mail className="h-3.5 w-3.5 text-primary" /> {esc.email}
                 </p>
               )}
+              {usuario?.perfil === "ADMIN" && (
+                <div className="flex justify-end gap-2 border-t pt-3">
+                  <Link href={`/admin/escolas/novo?id=${esc.id}`}><Button size="sm" variant="outline">
+                    <Pencil className="mr-1 h-3.5 w-3.5" />Editar
+                  </Button></Link>
+                  <Button size="sm" variant="destructive" onClick={() => excluirEscola(esc)}>
+                    <Trash2 className="mr-1 h-3.5 w-3.5" />Excluir
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {modalNova && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in-20">
-          <Card className="w-full max-w-md shadow-2xl">
-            <CardHeader className="flex flex-row items-center justify-between border-b p-4">
-              <CardTitle className="text-base font-bold">Cadastrar Unidade Escolar</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setModalNova(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <form onSubmit={handleSalvar}>
-              <CardContent className="p-4 space-y-4 text-xs">
-                {erro && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{erro}</AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Nome da Escola *</label>
-                  <Input
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Código INEP *</label>
-                  <Input
-                    value={codigo}
-                    onChange={(e) => setCodigo(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Endereço</label>
-                  <Input
-                    value={endereco}
-                    onChange={(e) => setEndereco(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Telefone</label>
-                  <Input
-                    value={telefone}
-                    onChange={(e) => setTelefone(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">E-mail Institucional</label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              </CardContent>
-              <div className="p-4 border-t flex justify-end gap-2">
-                <Button variant="outline" type="button" onClick={() => setModalNova(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" isLoading={salvando} className="font-semibold">
-                  Cadastrar Escola
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }

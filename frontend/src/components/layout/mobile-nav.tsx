@@ -13,7 +13,10 @@ export function MobileNav() {
 
   if (!usuario) return null;
 
-  const permitidos = navItems.filter((item) => item.roles.includes(usuario.perfil));
+  const permitidos = navItems.filter((item) =>
+    item.roles.includes(usuario.perfil) &&
+    !(item.href === "/perfil/senha" && usuario.perfil === "LEITOR" && usuario.escolaId != null)
+  );
 
   return (
     <nav

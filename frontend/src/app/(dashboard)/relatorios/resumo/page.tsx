@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Printer, School, CheckCircle2, TrendingUp } from "lucide-react";
 import { apiRequest, apiRequestAllPages } from "@/lib/api";
 import { ResumoRedeResponse, Escola } from "@/types";
+import { useAuth } from "@/context/auth-context";
 
 export default function RelatoriosResumoPage() {
+  const { usuario } = useAuth();
   const [resumo, setResumo] = useState<ResumoRedeResponse | null>(null);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +24,9 @@ export default function RelatoriosResumoPage() {
           apiRequestAllPages<Escola>("/escolas"),
         ]);
         setResumo(resumoData);
-        setEscolas(escolasData);
+        setEscolas(usuario?.escolaId
+          ? escolasData.filter((escola) => escola.id === usuario.escolaId)
+          : escolasData);
       } catch (err) {
         setErro(err instanceof Error ? err.message : "Não foi possível carregar o relatório.");
       } finally {
@@ -31,7 +35,7 @@ export default function RelatoriosResumoPage() {
     }
 
     carregarDados();
-  }, []);
+  }, [usuario?.escolaId]);
 
   const imprimir = () => {
     window.print();
@@ -42,7 +46,7 @@ export default function RelatoriosResumoPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 no-print">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Relatório Consolidado da Rede
+            {resumo?.escopo === "ESCOLA" ? "Relatório da Unidade Escolar" : "Relatório Consolidado da Rede"}
           </h1>
         </div>
         {erro && <p role="alert" className="text-sm text-destructive no-print">{erro}</p>}
@@ -86,7 +90,7 @@ export default function RelatoriosResumoPage() {
 
           <div className="space-y-3">
             <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
-              Unidades Escolares da Rede
+              {resumo?.escopo === "ESCOLA" ? "Unidade Escolar" : "Unidades Escolares da Rede"}
             </h3>
             <div className="table-scroll">
             <table className="w-full text-xs border border-collapse">

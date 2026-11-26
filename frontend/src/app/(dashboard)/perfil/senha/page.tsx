@@ -20,6 +20,17 @@ export default function AlterarSenhaPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
 
+  if (usuario?.perfil === "LEITOR" && usuario.escolaId != null) {
+    return (
+      <Card className="mx-auto mt-8 max-w-md">
+        <CardHeader><CardTitle>Alteração de senha indisponível</CardTitle></CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          Leitores vinculados a uma escola não podem alterar a senha. Procure a administração do sistema.
+        </CardContent>
+      </Card>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);

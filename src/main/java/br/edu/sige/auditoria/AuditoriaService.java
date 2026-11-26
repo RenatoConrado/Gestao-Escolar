@@ -1,6 +1,8 @@
 package br.edu.sige.auditoria;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import br.edu.sige.common.ApiException;
 import br.edu.sige.security.ContextoSeguranca;
 import br.edu.sige.security.UsuarioAutenticado;
+import br.edu.sige.usuario.Usuario;
+import br.edu.sige.usuario.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -22,6 +26,7 @@ public class AuditoriaService {
 
     private final EventoAuditoriaRepository eventos;
     private final ContextoSeguranca contexto;
+    private final UsuarioRepository usuarios;
 
     /**
      * Exige transação já aberta (MANDATORY): o evento é confirmado ou desfeito junto com a alteração auditada,
@@ -30,23 +35,28 @@ public class AuditoriaService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void registrar(String entidade, Long entidadeId, AcaoAuditoria acao, String detalhes) {
         UsuarioAutenticado u = contexto.atual();
-        eventos.save(new EventoAuditoria(Instant.now(), u.id(), u.perfil().name(), entidade, entidadeId, acao,
-                truncar(detalhes)));
+        String nome = usuarios.findComPerfilById(u.id()).map(Usuario::getNome).orElse(null);
+        eventos.save(new EventoAuditoria(Instant.now(), u.id(), nome, u.perfil().name(), entidade, entidadeId,
+                acao, truncar(detalhes)));
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<EventoAuditoriaResponse> consultar(String entidade, Long entidadeId, Pageable pageable) {
-        Page<EventoAuditoria> pagina;
-        if (entidade != null && entidadeId != null) {
-            pagina = eventos.findByEntidadeAndEntidadeId(entidade.toUpperCase(), entidadeId, pageable);
-        } else if (entidade != null) {
-            pagina = eventos.findByEntidade(entidade.toUpperCase(), pageable);
-        } else if (entidadeId != null) {
-            throw ApiException.regraDeNegocio("Para filtrar por entidadeId informe também a entidade.");
-        } else {
-            pagina = eventos.findAll(pageable);
+    public Page<EventoAuditoriaResponse> consultar(String entidade, Long entidadeId, String perfil,
+                                                    LocalDate de, LocalDate ate, Pageable pageable) {
+        if (de != null && ate != null && de.isAfter(ate)) {
+            throw ApiException.regraDeNegocio("A data inicial não pode ser posterior à data final.");
         }
+        if (entidadeId != null && (entidade == null || entidade.isBlank())) {
+            throw ApiException.regraDeNegocio("Para filtrar por entidadeId informe também a entidade.");
+        }
+        ZoneId zona = ZoneId.of("America/Sao_Paulo");
+        Instant inicio = de == null ? null : de.atStartOfDay(zona).toInstant();
+        Instant fimExclusivo = ate == null ? null : ate.plusDays(1).atStartOfDay(zona).toInstant();
+        Page<EventoAuditoria> pagina = eventos.filtrar(
+                entidade == null || entidade.isBlank() ? null : entidade.toUpperCase(),
+                entidadeId, perfil == null || perfil.isBlank() ? null : perfil.toUpperCase(),
+                inicio, fimExclusivo, pageable);
         return pagina.map(EventoAuditoriaResponse::from);
     }
 

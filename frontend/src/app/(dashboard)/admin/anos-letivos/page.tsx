@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,10 +114,10 @@ export default function AnosLetivosPage() {
         </div>
 
         {usuario?.perfil === "ADMIN" && (
-          <Button onClick={() => setModalNovo(true)} className="gap-2 font-semibold shadow-sm">
+          <Link href="/admin/anos-letivos/novo"><Button className="gap-2 font-semibold shadow-sm">
             <Plus className="h-4 w-4" />
             Novo Ano Letivo
-          </Button>
+          </Button></Link>
         )}
       </div>
 

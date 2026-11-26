@@ -70,14 +70,15 @@ e o token é validado/restaurado por `GET /api/auth/me`. Listas paginadas são c
 3. Como ADMIN, cadastre a escola e o ano letivo em **Escolas** e **Anos letivos**. Cadastre também as disciplinas necessárias.
 4. Crie os usuários da equipe em **Usuários**, escolhendo o perfil e, para SECRETARIO/PROFESSOR/LEITOR, a escola correspondente.
 5. Cadastre os professores e vincule, quando aplicável, cada professor à conta de usuário com perfil PROFESSOR. Em seguida, cadastre turmas, alunos e matrículas; por fim, associe professores, turmas e disciplinas em **Atribuições**.
-6. Cada usuário entra com seu próprio e-mail e senha. Troque a senha inicial pela tela **Perfil > Senha**.
+6. Cada usuário entra com seu próprio e-mail e senha. Usuários podem trocar a senha em **Perfil > Senha**, exceto LEITOR vinculado a uma escola, que deve solicitar a alteração à administração.
 
 ### Rotinas por perfil
 
-- **ADMIN:** configura escolas, anos letivos, contas, disciplinas e cadastros; acompanha auditoria e relatórios.
-- **SECRETARIO:** administra os cadastros da sua escola, incluindo professores, turmas, alunos, matrículas e atribuições; consulta prontuários e relatórios.
-- **PROFESSOR:** acessa suas turmas e registra frequência e avaliações/notas nas atribuições ativas. Use o registro de frequência em lote para lançar a chamada da turma em uma data.
-- **LEITOR:** consulta os dados e relatórios permitidos pelo escopo associado à sua conta; não pode gravar alterações.
+- **ADMIN:** faz CRUD de escolas, alunos e contas; edita usuários, redefine senhas e consulta auditoria da rede com filtros por perfil e período.
+- **SECRETARIO:** administra cadastros e relatórios da própria escola. Pode solicitar transferências; a escola de destino aceita escolhendo uma turma ou recusa informando justificativa.
+- **PROFESSOR:** acessa suas turmas, registra frequência e avaliações/notas nas atribuições ativas. A chamada já enviada não pode ser alterada pelo professor; correções são solicitadas à secretaria ou à administração. Notas e valores máximos de avaliação são limitados a 10.
+- **LEITOR:** consulta dados e relatórios permitidos pelo escopo da conta. LEITOR vinculado a uma escola só vê relatórios daquela unidade e não pode trocar a própria senha; LEITOR sem escola tem leitura da rede.
+- **Contatos da Escola:** reúne e-mail institucional, direção/gestor e secretaria escolar para comunicação rápida.
 
 ### Consultas e problemas comuns
 
@@ -108,11 +109,15 @@ tentativas de login (cabeçalho `Retry-After`).
 - **Limite de tentativas:** 5 falhas por (IP + e-mail) e 30 por IP em 10 min → 429. Em memória, configurável em
   `app.login-limit.*`. Atrás do proxy HTTPS, habilite `REMOTE_IP_HEADER`/`TRUSTED_PROXIES` para enxergar o IP real.
 - **Troca da própria senha:** `PUT /api/auth/alterar-senha` (`senhaAtual`, `novaSenha`); revoga os tokens antigos
-  e devolve um token novo. Política: 8 a 72 bytes.
+  e devolve um token novo. Política: 8 a 72 bytes. LEITOR vinculado a uma escola não pode usar este endpoint.
 
-**Auditoria:** todas as entidades guardam `criado_em/atualizado_em/criado_por/atualizado_por`. Além disso, alterações
-em notas, frequências, avaliações e contas de usuário geram um evento na tabela `auditoria_eventos` (mesma transação
-da alteração), consultável por ADMIN em `GET /api/auditoria?entidade=NOTA&entidadeId=10`.
+**Auditoria:** registra ator (nome e perfil), entidade, ação e detalhes na mesma transação da alteração. Inclui operações
+de usuários, escolas, alunos, notas, frequências, avaliações e transferências. ADMIN pode filtrar em
+`GET /api/auditoria?perfil=PROFESSOR&de=2026-01-01&ate=2026-12-31`.
+
+**Transferências:** `POST /api/transferencias` solicita a mudança de escola; `GET /api/transferencias` lista solicitações
+no escopo da conta; `PUT /api/transferencias/{id}/decisao` aceita com `turmaDestinoId` ou recusa com `justificativa`.
+A aceitação encerra a matrícula de origem como TRANSFERIDA e cria matrícula ativa na turma de destino do mesmo ano letivo.
 
 **Boletim do aluno:** `GET /api/relatorios/alunos/{alunoId}` retorna dados da matrícula ativa mais recente, disciplinas,
 avaliações/notas e resumo de frequência, respeitando o escopo do perfil autenticado.
@@ -128,12 +133,14 @@ CRUD = criar/ler/atualizar/excluir · R = leitura · U = só atualização (alte
 | `disciplinas` | CRUD | CRUD | R | R |
 | `professores` | CRUD | CRUD (sua escola) | — | R |
 | `turmas` | CRUD | CRUD (sua escola) | R (só as suas) | R |
-| `alunos` | CRUD | CRUD | R (sem CPF) | R (sem CPF) |
+| `alunos` | CRUD | CRUD (escola atual) | R (sem CPF) | R (sem CPF; escola se vinculada) |
 | `matriculas` | CRUD | CRUD (sua escola) | — (`GET /turmas/{id}/alunos`) | R |
 | `atribuicoes` | CRUD | CRUD (sua escola) | `GET /atribuicoes/minhas` | R |
-| `frequencias` (+ `/lote`) | CRUD | U (sua escola) | CRUD (suas turmas) | R |
+| `frequencias` (+ `/lote`) | CRUD | R/U/D (sua escola; correções) | C (suas turmas; sem corrigir chamada enviada) | R |
 | `avaliacoes`, `notas` | CRUD | U (sua escola) | CRUD (suas atribuições) | R |
 | `relatorios` | rede | sua escola | suas turmas | rede (ou escola, se vinculado) |
+| `transferencias` | R/C/U | R/C/U (própria escola) | — | — |
+| `contatos` | R | R (própria escola) | R (própria escola) | R (conforme escopo) |
 
 Camadas de defesa: (1) `SecurityConfig` — qualquer `POST/PUT/PATCH/DELETE` de LEITOR devolve **403** antes de chegar
 ao controller; (2) `@PreAuthorize` nos controllers e nos services; (3) `AcessoService` — escopo de dados
@@ -153,6 +160,7 @@ ao controller; (2) `@PreAuthorize` nos controllers e nos services; (3) `AcessoSe
    heap de 256 MB, PostgreSQL ajustado e sem porta publicada.
 5. **Chamada em lote** (`POST /api/frequencias/lote`): uma requisição por turma/dia, ideal para o celular.
 6. **LGPD**: CPF só é exposto a ADMIN e SECRETARIO.
+7. **Validação de identificadores**: Código INEP exige 8 dígitos; CPF é armazenado com 11 dígitos; telefone usa formato nacional `(DD) 00000-0000`; matrículas aceitam até 30 letras/números e os caracteres `./-`.
 7. **Segredos** só por variável de ambiente; o primeiro ADMIN é criado a partir de `ADMIN_EMAIL`/`ADMIN_SENHA`
    apenas se não houver usuários.
 

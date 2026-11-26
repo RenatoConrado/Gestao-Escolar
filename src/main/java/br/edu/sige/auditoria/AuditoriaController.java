@@ -2,6 +2,8 @@ package br.edu.sige.auditoria;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.time.LocalDate;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -28,7 +30,10 @@ public class AuditoriaController {
     public PageResponse<EventoAuditoriaResponse> consultar(
             @RequestParam(required = false) String entidade,
             @RequestParam(required = false) Long entidadeId,
+            @RequestParam(required = false) String perfil,
+            @RequestParam(required = false) LocalDate de,
+            @RequestParam(required = false) LocalDate ate,
             @PageableDefault(size = 50, sort = "em", direction = Sort.Direction.DESC) Pageable pageable) {
-        return PageResponse.of(service.consultar(entidade, entidadeId, pageable));
+        return PageResponse.of(service.consultar(entidade, entidadeId, perfil, de, ate, pageable));
     }
 }

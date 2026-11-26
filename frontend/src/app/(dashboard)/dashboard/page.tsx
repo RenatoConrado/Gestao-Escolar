@@ -136,23 +136,17 @@ export default function DashboardPage() {
         {(usuario.perfil === "PROFESSOR" || usuario.perfil === "LEITOR") && (
           <div className="grid grid-cols-2 gap-4">
             <Card>
-              <CardHeader className="p-4 pb-1">
+              <CardHeader className="p-4">
                 <CardDescription className="text-xs font-medium">Turmas no escopo</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.turmas ?? (loading ? "..." : "—")}</CardTitle>
               </CardHeader>
-              <CardContent className="p-4 pt-1 text-[11px] text-muted-foreground flex items-center gap-1">
-                <BookOpen className="h-3.5 w-3.5" /> Turmas vinculadas ao seu perfil
-              </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="p-4 pb-1">
+              <CardHeader className="p-4">
                 <CardDescription className="text-xs font-medium">Alunos matriculados</CardDescription>
                 <CardTitle className="text-2xl font-bold">{resumo?.alunosMatriculados ?? (loading ? "..." : "—")}</CardTitle>
               </CardHeader>
-              <CardContent className="p-4 pt-1 text-[11px] text-muted-foreground flex items-center gap-1">
-                <Users className="h-3.5 w-3.5" /> Conforme os dados disponíveis na API
-              </CardContent>
             </Card>
           </div>
         )}
