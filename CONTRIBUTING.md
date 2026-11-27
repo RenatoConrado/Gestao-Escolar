@@ -10,7 +10,7 @@ Para contribuir no ambiente de desenvolvimento local sem divergências de runtim
 - Docker Compose 5.6.0
   - JDK 21
   - Spring Boot 4.1.1
-  - Noje.js 26.10.0
+  - Node.js 26.10.0
   - PostgreSQL 16
 
 
